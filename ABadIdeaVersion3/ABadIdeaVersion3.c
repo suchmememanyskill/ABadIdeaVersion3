@@ -22,7 +22,7 @@ int main()
     callClass("__print__", d, NULL, NULL);
     */
     
-    Function_t* thing = StartParse("main = { 1 1 }");
+    Function_t* thing = StartParse("#REQUIRE VER 3.0.5\nmain = { two = 1 + 1 }");
 
     //gfx_printf("\na %d\n", getIntValue(&a));
 }

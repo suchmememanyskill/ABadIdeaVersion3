@@ -86,7 +86,41 @@ Function_t* StartParse(char* in) {
 
 	while (*in) {
 		if (*in == '#') {
-			// add flag #REQUIRE MINERVA and #REQUIRE 3.0.6 later
+			// add flag #REQUIRE MINERVA and #REQUIRE VER 3.0.6 later
+
+			if (!memcmp(in + 1, "REQUIRE ", 8)) {
+				if (!memcmp(in + 9, "VER ", 4)) {
+					u8 vers[3] = { 0 };
+					char* verStart = in + 13;
+					for (u8 i = 0; i < 3; i++) {
+						while (isValidNum(*verStart)) {
+							vers[i] = vers[i] * 10 + *verStart++ - '0';
+						}
+						verStart++;
+					}
+
+					u8 outdated = 0;
+					if (vers[0] > LPVERSION_MAJOR)
+						outdated = 1;
+					else if (vers[0] == LPVERSION_MAJOR) {
+						if (vers[1] > LPVERSION_MINOR)
+							outdated = 1;
+						else if (vers[1] == LPVERSION_MINOR) {
+							if (vers[2] > LPVERSION_BUGFX)
+								outdated = 1;
+						}
+					}
+
+					if (outdated)
+						gfx_printf("[FATAL] Script runner is outdated!");
+				}
+				else if (!memcmp(in + 9, "MINERVA", 7)) {
+					u8 minervaEnabled = 0; // TODO: Change this to the actual value
+					if (!minervaEnabled)
+						gfx_printf("[FATAL] extended memory required");
+				}
+			}
+
 			while (*in && *in != '\n')
 				in++;
 		}
@@ -199,7 +233,7 @@ int NextTokenv2(u8 TokenType, void* item) {
 	Operator_t op = { .token = Variable };
 	
 	if (TokenType >= Token_Variable && TokenType <= Token_Int && lastOp) {
-		if (lastOp->token == Variable || lastOp->token == BetweenBrackets) {
+		if ((lastOp->token == Variable || lastOp->token == BetweenBrackets) && lastOp->variable.action != ActionSet) {
 			op.token = EquationSeperator;
 			vecAdd(&lastFunc->operations, op);
 			op.token = Variable;
