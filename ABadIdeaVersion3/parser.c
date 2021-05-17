@@ -234,9 +234,13 @@ void addExtraOnVariableRef(VariableReference_t *ref, ActionExtraType_t actionExt
 	}
 }
 
+VariableReference_t* getLastRef(VariableReference_t* ref) {
+	for (; ref->subcall != NULL; ref = ref->subcall);
+	return ref;
+}
+
 ParserRet_t parseScript(char* in) {
 	Vector_t functionStack; // Function_t
-	UnsolvedArrayClass_t arrayHolder;
 	Vector_t stackHistoryHolder; // StaticHistory_t
 	Vector_t staticVariableHolder; // Variable_t
 
@@ -256,13 +260,8 @@ ParserRet_t parseScript(char* in) {
 
 		Operator_t* lastOp = NULL;
 
-		if (*lastHistory == History_Bracket || *lastHistory == History_Function) {
-			if (lastFunc) {
-				lastOp = getStackEntry(&lastFunc->operations);
-			}
-		}
-		else if (*lastHistory == History_Array) {
-			lastOp = getStackEntry(&arrayHolder.operations);
+		if (lastFunc) {
+			lastOp = getStackEntry(&lastFunc->operations);
 		}
 
 		void* var = NULL;
@@ -273,12 +272,7 @@ ParserRet_t parseScript(char* in) {
 		if (tokenType >= Token_Variable && tokenType <= Token_Int && lastOp) {
 			if ((lastOp->token == Variable || lastOp->token == BetweenBrackets) && lastOp->variable.action != ActionSet) {
 				op.token = EquationSeperator;
-				if (*lastHistory == History_Function || *lastHistory == History_Bracket) {
-					vecAdd(&lastFunc->operations, op);
-				}
-				else if (*lastHistory == History_Array) {
-					vecAdd(&arrayHolder.operations, op);
-				}
+				vecAdd(&lastFunc->operations, op);
 				op.token = Variable;
 			}
 		}
@@ -327,17 +321,37 @@ ParserRet_t parseScript(char* in) {
 			}
 			else if (token == RightCurlyBracket) {
 				if (stackHistoryHolder.count != 1 && *lastHistory == History_Function) {
-					Variable_t a = newFunctionVariable(createFunctionClass(*lastFunc, NULL));
-					popStackEntry(&functionStack);
+					Function_t *popFunc = popStackEntry(&functionStack);
 					popStackEntry(&stackHistoryHolder);
 
 					lastFunc = getStackEntry(&functionStack);
 
-					vecAdd(&staticVariableHolder, a);
-					CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
-					op.variable = reference;
+					if (lastFunc) {
+						lastOp = getStackEntry(&lastFunc->operations);
+					}
 
-					// TODO: detect if lastFunc is a variable with Call
+					if (lastOp->token == Variable) {
+						VariableReference_t* lastRef = getLastRef(&lastOp->variable);
+						if (lastRef->extraAction == ActionExtraCallArgs) {
+							Function_t* funcArgs = lastRef->extra;
+							Function_t* newFuncArgs = malloc(sizeof(Function_t) * 2);
+							newFuncArgs[0] = *funcArgs;
+							newFuncArgs[1] = *popFunc;
+							free(funcArgs);
+							lastRef->extra = newFuncArgs;
+							lastRef->extraAction = ActionExtraCallArgsFunction;
+							continue;
+						}
+						else {
+							gfx_printf("[FATAL] {} after variable?? is this valid??");
+						}
+					}
+					else {
+						Variable_t a = newFunctionVariable(createFunctionClass(*popFunc, NULL));
+						vecAdd(&staticVariableHolder, a);
+						CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+						op.variable = reference;
+					}
 				}
 				else {
 					gfx_printf("[FATAL] stack count is 1 or state is not a function");
@@ -370,16 +384,9 @@ ParserRet_t parseScript(char* in) {
 					Function_t* bstack = popStackEntry(&functionStack);
 					popStackEntry(&stackHistoryHolder);
 					lastFunc = getStackEntry(&functionStack);
-					lastHistory = getStackEntry(&stackHistoryHolder);
 
-					// Copy paste
-					if (*lastHistory == History_Bracket || *lastHistory == History_Function) {
-						if (lastFunc) {
-							lastOp = getStackEntry(&lastFunc->operations);
-						}
-					}
-					else if (*lastHistory == History_Array) {
-						lastOp = getStackEntry(&arrayHolder.operations);
+					if (lastFunc) {
+						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
 					if (lastOp->token == Variable) {
@@ -402,12 +409,7 @@ ParserRet_t parseScript(char* in) {
 			}
 		}
 
-		if (*lastHistory == History_Function || *lastHistory == History_Bracket) {
-			vecAdd(&lastFunc->operations, op);
-		}
-		else if (*lastHistory == History_Array) {
-			// stub
-		}
+		vecAdd(&lastFunc->operations, op);
 	}
 
 	if (functionStack.count != 1 || stackHistoryHolder.count != 1)

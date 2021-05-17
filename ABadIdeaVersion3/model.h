@@ -161,8 +161,8 @@ typedef struct _VariableReference_t {
 	struct _VariableReference_t* subcall;
 	union {
 		struct {
-			ActionType_t action : 3;
-			ActionExtraType_t extraAction : 3;
+			u8 action : 3;
+			u8 extraAction : 3;
 			u8 staticVariableSet : 1;
 			u8 staticVariableRef : 1;
 		};
