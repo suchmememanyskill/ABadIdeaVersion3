@@ -53,3 +53,15 @@ Variable_t newFunctionVariable(FunctionClass_t func) {
 	Variable_t var = { .variableType = FunctionClass, .readOnly = 1, .function = func };
 	return var;
 }
+
+int countTokens(Function_t *func, u8 toCount) {
+	Operator_t* ops = func->operations.data;
+	int count = 0;
+	for (int i = 0; i < func->operations.count; i++) {
+		if (ops[i].token == toCount) {
+			count++;
+		}
+	}
+
+	return count;
+}

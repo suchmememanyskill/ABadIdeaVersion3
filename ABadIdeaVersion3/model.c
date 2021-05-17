@@ -35,6 +35,7 @@ TokenConvertion_t tokenConvertions[] = {
 	{And, "&"},
 	{Or, "|"},
 	{Dot, "."},
+	{EquationSeperator, ","},
 };
 
 u32 tokenConvertionCount = ARRAY_SIZE(tokenConvertions);

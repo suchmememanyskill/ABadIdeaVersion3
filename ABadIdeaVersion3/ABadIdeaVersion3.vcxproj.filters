@@ -42,6 +42,9 @@
     <ClCompile Include="arrayClass.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="unsolvedArrayClass.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="compat.h">

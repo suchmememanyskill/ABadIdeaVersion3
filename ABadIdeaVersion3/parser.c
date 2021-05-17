@@ -65,13 +65,6 @@ typedef enum {
 	History_Bracket,
 	History_Array,
 } StackHistory_t;
-/*
-Vector_t functionStack; // Function_t
-Vector_t bracketStack; // Operator_t
-UnsolvedArrayClass_t arrayHolder; // No recursive array elements are currently supported
-Vector_t stackHistoryHolder; // StackHistory_t
-Vector_t staticVariableHolder; // Variable_t. Malloc should not be ran once per static variable. Like this we only have to malloc once
-*/
 
 u8 nextToken(char** inPtr, void** val) {
 	char* in = *inPtr;
@@ -326,11 +319,11 @@ ParserRet_t parseScript(char* in) {
 
 					lastFunc = getStackEntry(&functionStack);
 
-					if (lastFunc) {
+					if (lastFunc) { // TODO: Add check for null deref
 						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
-					if (lastOp->token == Variable) {
+					if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
 						VariableReference_t* lastRef = getLastRef(&lastOp->variable);
 						if (lastRef->extraAction == ActionExtraCallArgs) {
 							Function_t* funcArgs = lastRef->extra;
@@ -358,9 +351,7 @@ ParserRet_t parseScript(char* in) {
 				}
 			}
 			else if (token == Dot) {
-				if (lastOp->token != Variable)
-					gfx_printf("[FATAL] member access on non-variable");
-				else {
+				if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
 					tokenType = nextToken(&in, &var);
 					if (tokenType != Token_Variable) {
 						gfx_printf("[FATAL] acessing member with non-dynamic token");
@@ -369,6 +360,9 @@ ParserRet_t parseScript(char* in) {
 						addExtraOnVariableRef(&lastOp->variable, ActionExtraMemberName, var);
 						continue;
 					}
+				}
+				else {
+					gfx_printf("[FATAL] member access on non-variable");
 				}
 			}
 			else if (token == LeftBracket) {
@@ -379,17 +373,17 @@ ParserRet_t parseScript(char* in) {
 				vecAdd(&stackHistoryHolder, functionHistory);
 				continue;
 			}
-			else if (token == RightBracket) {
+			else if (token == RightBracket) { 
 				if (*lastHistory == History_Bracket) {
 					Function_t* bstack = popStackEntry(&functionStack);
 					popStackEntry(&stackHistoryHolder);
 					lastFunc = getStackEntry(&functionStack);
 
-					if (lastFunc) {
+					if (lastFunc) { // TODO: Add check for null deref
 						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
-					if (lastOp->token == Variable) {
+					if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
 						Function_t* newBStack = malloc(sizeof(Function_t));
 						*newBStack = *bstack;
 						addExtraOnVariableRef(&lastOp->variable, ActionExtraCallArgs, newBStack);
@@ -402,6 +396,47 @@ ParserRet_t parseScript(char* in) {
 				}
 				else {
 					gfx_printf("[FATAL] ) without (");
+				}
+			}
+			else if (token == LeftSquareBracket) {
+				Function_t templateFunction = createEmptyFunction();
+				vecAdd(&functionStack, templateFunction);
+
+				StackHistory_t functionHistory = History_Array;
+				vecAdd(&stackHistoryHolder, functionHistory);
+				continue;
+			}
+			else if (token == RightSquareBracket) {
+				if (*lastHistory == History_Array) {
+					Function_t* astack = popStackEntry(&functionStack);
+					popStackEntry(&stackHistoryHolder);
+					lastFunc = getStackEntry(&functionStack);
+
+					if (lastFunc) { // TODO: Add check for null deref
+						lastOp = getStackEntry(&lastFunc->operations);
+					}
+
+					if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
+						if (!countTokens(astack, EquationSeperator)) {
+							Function_t* newAStack = malloc(sizeof(Function_t));
+							*newAStack = *astack;
+							addExtraOnVariableRef(&lastOp->variable, ActionExtraArrayIndex, newAStack);
+							continue;
+						}
+						else {
+							gfx_printf("[FATAL] indexes cannot contain mutiple arguments");
+						}
+					}
+					else {
+						// TODO: optimize output to a typed array, if possible
+						Variable_t a = createUnsolvedArrayVariable(astack);
+						vecAdd(&staticVariableHolder, a);
+						CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+						op.variable = reference;
+					}
+				}
+				else {
+					gfx_printf("[FATAL] ] without [");
 				}
 			}
 			else {

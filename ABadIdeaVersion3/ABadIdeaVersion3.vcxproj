@@ -147,6 +147,7 @@
     <ClCompile Include="model.c" />
     <ClCompile Include="parser.c" />
     <ClCompile Include="StringClass.c" />
+    <ClCompile Include="unsolvedArrayClass.c" />
     <ClCompile Include="vector.c" />
   </ItemGroup>
   <ItemGroup>
