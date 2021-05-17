@@ -23,7 +23,7 @@ int main()
     */
     
     //parseScript("#REQUIRE VER 3.0.5\nmain = { two = 1 + 1 }");
-    ParserRet_t ret = parseScript("a.b");
+    ParserRet_t ret = parseScript("a.b.c()");
 
     //gfx_printf("\na %d\n", getIntValue(&a));
 }

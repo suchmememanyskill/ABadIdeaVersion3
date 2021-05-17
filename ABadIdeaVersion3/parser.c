@@ -214,6 +214,25 @@ u8 nextToken(char** inPtr, void** val) {
 #define CreateVariableReferenceStatic(var) VariableReference_t reference = { .staticVariable = var, .action = ActionGet, .staticVariableSet = 1, .staticVariableRef = 1 }
 #define CreateVariableReferenceStr(str) VariableReference_t reference = { .name = str, .action = ActionGet }
 
+void setLastActionVariableRef(VariableReference_t* ref, ActionType_t action) {
+	for (; ref->subcall != NULL; ref = ref->subcall);
+	ref->action = action;
+}
+
+void addExtraOnVariableRef(VariableReference_t *ref, ActionExtraType_t actionExtra, void *extra) {
+	for (; ref->subcall != NULL; ref = ref->subcall);
+	// Check for FuncCall -> FuncCallArgs?
+	if (ref->extraAction == ActionExtraNone) {
+		ref->extraAction = actionExtra;
+		ref->extra = extra;
+	}
+	else {
+		VariableReference_t* newRef = calloc(1, sizeof(VariableReference_t));
+		newRef->extraAction = actionExtra;
+		newRef->extra = extra;
+		ref->subcall = newRef;
+	}
+}
 
 ParserRet_t parseScript(char* in) {
 	Vector_t functionStack; // Function_t
@@ -235,7 +254,7 @@ ParserRet_t parseScript(char* in) {
 		Function_t* lastFunc = getStackEntry(&functionStack);
 		StackHistory_t* lastHistory = getStackEntry(&stackHistoryHolder);
 
-		Operator_t* lastOp = NULL; // Change lastop based on lastHistory
+		Operator_t* lastOp = NULL;
 
 		if (*lastHistory == History_Bracket || *lastHistory == History_Function) {
 			if (lastFunc) {
@@ -251,7 +270,6 @@ ParserRet_t parseScript(char* in) {
 
 		Operator_t op = { .token = Variable };
 
-		// TODO: this should add based on lastHistory
 		if (tokenType >= Token_Variable && tokenType <= Token_Int && lastOp) {
 			if ((lastOp->token == Variable || lastOp->token == BetweenBrackets) && lastOp->variable.action != ActionSet) {
 				op.token = EquationSeperator;
@@ -318,6 +336,8 @@ ParserRet_t parseScript(char* in) {
 					vecAdd(&staticVariableHolder, a);
 					CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 					op.variable = reference;
+
+					// TODO: detect if lastFunc is a variable with Call
 				}
 				else {
 					gfx_printf("[FATAL] stack count is 1 or state is not a function");
@@ -332,11 +352,49 @@ ParserRet_t parseScript(char* in) {
 						gfx_printf("[FATAL] acessing member with non-dynamic token");
 					}
 					else {
-						// Todo: Add onto linked list properly
-						lastOp->variable.extraAction = ActionExtraMemberName;
-						lastOp->variable.extra = var;
+						addExtraOnVariableRef(&lastOp->variable, ActionExtraMemberName, var);
 						continue;
 					}
+				}
+			}
+			else if (token == LeftBracket) {
+				Function_t templateFunction = createEmptyFunction();
+				vecAdd(&functionStack, templateFunction);
+
+				StackHistory_t functionHistory = History_Bracket;
+				vecAdd(&stackHistoryHolder, functionHistory);
+				continue;
+			}
+			else if (token == RightBracket) {
+				if (*lastHistory == History_Bracket) {
+					Function_t* bstack = popStackEntry(&functionStack);
+					popStackEntry(&stackHistoryHolder);
+					lastFunc = getStackEntry(&functionStack);
+					lastHistory = getStackEntry(&stackHistoryHolder);
+
+					// Copy paste
+					if (*lastHistory == History_Bracket || *lastHistory == History_Function) {
+						if (lastFunc) {
+							lastOp = getStackEntry(&lastFunc->operations);
+						}
+					}
+					else if (*lastHistory == History_Array) {
+						lastOp = getStackEntry(&arrayHolder.operations);
+					}
+
+					if (lastOp->token == Variable) {
+						Function_t* newBStack = malloc(sizeof(Function_t));
+						*newBStack = *bstack;
+						addExtraOnVariableRef(&lastOp->variable, ActionExtraCallArgs, newBStack);
+						continue;
+					}
+					else {
+						op.betweenBrackets = *bstack;
+						op.token = BetweenBrackets;
+					}
+				}
+				else {
+					gfx_printf("[FATAL] ) without (");
 				}
 			}
 			else {
@@ -344,13 +402,10 @@ ParserRet_t parseScript(char* in) {
 			}
 		}
 
-		if (*lastHistory == History_Function) {
+		if (*lastHistory == History_Function || *lastHistory == History_Bracket) {
 			vecAdd(&lastFunc->operations, op);
 		}
 		else if (*lastHistory == History_Array) {
-			// stub
-		}
-		else if (*lastHistory == History_Bracket) {
 			// stub
 		}
 	}

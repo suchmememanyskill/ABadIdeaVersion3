@@ -20,6 +20,7 @@ typedef enum {
 	ArrayClass,
 	UnresolvedArrayClass,
 	DictionaryClass,
+	MemberFunctionClass,
 } VariableType_t;
 
 typedef enum {
@@ -63,7 +64,6 @@ typedef enum {
 typedef enum {
 	ActionGet = 0,
 	ActionSet,
-	ActionMember,
 	ActionCall,
 } ActionType_t;
 
@@ -82,6 +82,7 @@ typedef struct {
 } Function_t;
 
 struct _ClassFunctionTableEntry_t;
+struct _Variable_t;
 
 typedef struct _FunctionClass_t {
 	union {
@@ -126,6 +127,11 @@ typedef struct _StringClass_t {
 	};
 } StringClass_t;
 
+typedef struct {
+	struct _ClassFunctionTableEntry_t* builtInPtr;
+	struct _Variable_t* parent;
+} MemberFunctionClass_t;
+
 typedef struct _Variable_t {
 	//void* variable;
 	union {
@@ -135,6 +141,7 @@ typedef struct _Variable_t {
 		IntClass_t integer;
 		StringClass_t string;
 		ArrayClass_t solvedArray;
+		MemberFunctionClass_t functionMember;
 	};
 	union {
 		struct {
