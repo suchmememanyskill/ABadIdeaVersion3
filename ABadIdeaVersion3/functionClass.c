@@ -18,7 +18,7 @@ Function_t* getFunctionValue(Variable_t* var) {
 
 Function_t createEmptyFunction() {
 	Function_t a = { 0 };
-	a.operations = newVec(sizeof(Operator_t), 16);
+	a.operations = newVec(sizeof(Operator_t), 0);
 	return a;
 }
 

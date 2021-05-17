@@ -4,14 +4,27 @@
 #include <string.h>
 
 Vector_t newVec(u8 typesz, u32 preallocate) {
-	Vector_t res = {
-		.data = calloc(preallocate, typesz),
-		.capacity = preallocate * typesz,
-		.count = 0,
-		.elemSz = typesz
-	};
-	// check .data != null;
-	return res;
+	if (preallocate) {
+		Vector_t res = {
+			.data = calloc(preallocate, typesz),
+			.capacity = preallocate * typesz,
+			.count = 0,
+			.elemSz = typesz
+		};
+
+		// check .data != null;
+		return res;
+	}
+	else {
+		Vector_t res = {
+			.data = NULL,
+			.capacity = 1 * typesz,
+			.count = 0,
+			.elemSz = typesz
+		};
+
+		return res;
+	}
 }
 
 Vector_t vecFromArray(void* array, u32 count, u32 typesz)
@@ -28,6 +41,10 @@ Vector_t vecFromArray(void* array, u32 count, u32 typesz)
 int vecAddElem(Vector_t* v, void* elem, u8 sz) {
 	if (!v || !elem || v->elemSz != sz)
 		return 0;
+
+	if (v->data == NULL) {
+		v->data = calloc(1, v->elemSz);
+	}
 
 	u32 usedbytes = v->count * sz;
 	if (usedbytes >= v->capacity)

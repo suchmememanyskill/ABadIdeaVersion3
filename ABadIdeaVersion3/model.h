@@ -5,6 +5,8 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef long long s64;
 
+#pragma pack(1)
+
 typedef struct {
 	void* data;
 	u32 capacity;

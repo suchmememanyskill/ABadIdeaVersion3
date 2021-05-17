@@ -237,13 +237,13 @@ ParserRet_t parseScript(char* in) {
 	Vector_t stackHistoryHolder; // StaticHistory_t
 	Vector_t staticVariableHolder; // Variable_t
 
-	functionStack = newVec(sizeof(Function_t), 4);
+	functionStack = newVec(sizeof(Function_t), 0);
 	Function_t firstFunction = createEmptyFunction();
 	vecAdd(&functionStack, firstFunction);
 
-	staticVariableHolder = newVec(sizeof(Variable_t), 16);
+	staticVariableHolder = newVec(sizeof(Variable_t), 0);
 
-	stackHistoryHolder = newVec(sizeof(StackHistory_t), 4);
+	stackHistoryHolder = newVec(sizeof(StackHistory_t), 1);
 	StackHistory_t firstHistory = History_Function;
 	vecAdd(&stackHistoryHolder, firstHistory);
 
