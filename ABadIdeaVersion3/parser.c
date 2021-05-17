@@ -1,6 +1,7 @@
 #include "model.h"
 #include "compat.h"
 #include "vector.h"
+#include "parser.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -55,7 +56,8 @@ enum TokenType {
 	Token_Variable = 0,
 	Token_String,
 	Token_Int,
-	Token_Token
+	Token_Token,
+	Token_Err,
 };
 
 typedef enum {
@@ -63,31 +65,19 @@ typedef enum {
 	History_Bracket,
 	History_Array,
 } StackHistory_t;
-
+/*
 Vector_t functionStack; // Function_t
 Vector_t bracketStack; // Operator_t
 UnsolvedArrayClass_t arrayHolder; // No recursive array elements are currently supported
 Vector_t stackHistoryHolder; // StackHistory_t
 Vector_t staticVariableHolder; // Variable_t. Malloc should not be ran once per static variable. Like this we only have to malloc once
+*/
 
-Function_t* StartParse(char* in) {
-	// TODO: change later to Equation_t
-	script = newVec(sizeof(Operator_t), 16);
-
-	functionStack = newVec(sizeof(Function_t), 4);
-	Function_t firstFunction = createEmptyFunction();
-	vecAdd(&functionStack, firstFunction);
-
-	staticVariableHolder = newVec(sizeof(Variable_t), 16);
-
-	stackHistoryHolder = newVec(sizeof(StackHistory_t), 4);
-	StackHistory_t firstHistory = History_Function;
-	vecAdd(&stackHistoryHolder, firstHistory);
-
-	while (*in) {
+u8 nextToken(char** inPtr, void** val) {
+	char* in = *inPtr;
+	u8 ret = Token_Err;
+	while (ret == Token_Err) {
 		if (*in == '#') {
-			// add flag #REQUIRE MINERVA and #REQUIRE VER 3.0.6 later
-
 			if (!memcmp(in + 1, "REQUIRE ", 8)) {
 				if (!memcmp(in + 9, "VER ", 4)) {
 					u8 vers[3] = { 0 };
@@ -130,12 +120,12 @@ Function_t* StartParse(char* in) {
 			while (isValidVar(*in))
 				in++;
 
-			char* fuck = utils_copyStringSize(startWord, in - startWord);
+			char* str = utils_copyStringSize(startWord, in - startWord);
 
-			gfx_printf("Variable: '%s'\n", fuck);
-			NextTokenv2(Token_Variable, fuck);
-
-			continue;
+			gfx_printf("Variable: '%s'\n", str);
+			ret = Token_Variable;
+			*val = str;
+			break;
 		}
 		else if (isValidNum(*in) || (*in == '-' && isValidNum(in[1]))) {
 			s64 parse = 0;
@@ -158,9 +148,13 @@ Function_t* StartParse(char* in) {
 				parse *= -1;
 
 			gfx_printf("Integer: '%d'\n", parse);
-			NextTokenv2(Token_Int, &parse);
+			ret = Token_Int;
 
-			continue;
+			s64* parsePersistent = malloc(sizeof(s64));
+			*parsePersistent = parse;
+
+			*val = parsePersistent;
+			break;
 		}
 		ELIFC('"') {
 			char* startStr = ++in;
@@ -192,15 +186,16 @@ Function_t* StartParse(char* in) {
 			storage[pos] = '\0';
 
 			gfx_printf("String: '%s'\n", storage);
-			NextTokenv2(Token_String, storage);
+			ret = Token_String;
+			*val = storage;
 		}
 		else {
 			for (u32 i = 0; i < tokenConvertionCount; i++) {
 				TokenConvertion_t t = tokenConvertions[i];
 				if (!memcmp(t.strToken, in, (t.strToken[1] == '\0') ? 1 : 2)) {
 					gfx_printf("Token: '%s'\n", t.strToken);
-					u8 tokenStorage = t.token;
-					NextTokenv2(Token_Token, &tokenStorage);
+					ret = Token_Token;
+					*val = t.token;
 
 					if (t.strToken[1] != '\0')
 						in++;
@@ -212,159 +207,161 @@ Function_t* StartParse(char* in) {
 		in++;
 	}
 
-	return functionStack.data;
+	*inPtr = in;
+	return ret;
 }
 
 #define CreateVariableReferenceStatic(var) VariableReference_t reference = { .staticVariable = var, .action = ActionGet, .staticVariableSet = 1, .staticVariableRef = 1 }
 #define CreateVariableReferenceStr(str) VariableReference_t reference = { .name = str, .action = ActionGet }
 
-// TODO: all static variables should go into an array, so there are not 1000 mallocs!!
 
-int NextTokenv2(u8 TokenType, void* item) {
-	Function_t* lastFunc = getStackEntry(&functionStack);
-	Operator_t* lastOp = NULL;
-	if (lastFunc) {
-		lastOp = getStackEntry(&lastFunc->operations);
-	}
+ParserRet_t parseScript(char* in) {
+	Vector_t functionStack; // Function_t
+	UnsolvedArrayClass_t arrayHolder;
+	Vector_t stackHistoryHolder; // StaticHistory_t
+	Vector_t staticVariableHolder; // Variable_t
 
-	Operator_t* lastBracket = getStackEntry(&bracketStack);
-	StackHistory_t* lastHistory = getStackEntry(&stackHistoryHolder);
+	functionStack = newVec(sizeof(Function_t), 4);
+	Function_t firstFunction = createEmptyFunction();
+	vecAdd(&functionStack, firstFunction);
 
-	Operator_t op = { .token = Variable };
-	
-	if (TokenType >= Token_Variable && TokenType <= Token_Int && lastOp) {
-		if ((lastOp->token == Variable || lastOp->token == BetweenBrackets) && lastOp->variable.action != ActionSet) {
-			op.token = EquationSeperator;
-			vecAdd(&lastFunc->operations, op);
-			op.token = Variable;
+	staticVariableHolder = newVec(sizeof(Variable_t), 16);
+
+	stackHistoryHolder = newVec(sizeof(StackHistory_t), 4);
+	StackHistory_t firstHistory = History_Function;
+	vecAdd(&stackHistoryHolder, firstHistory);
+
+	while (*in) {
+		Function_t* lastFunc = getStackEntry(&functionStack);
+		StackHistory_t* lastHistory = getStackEntry(&stackHistoryHolder);
+
+		Operator_t* lastOp = NULL; // Change lastop based on lastHistory
+
+		if (*lastHistory == History_Bracket || *lastHistory == History_Function) {
+			if (lastFunc) {
+				lastOp = getStackEntry(&lastFunc->operations);
+			}
 		}
-	}
+		else if (*lastHistory == History_Array) {
+			lastOp = getStackEntry(&arrayHolder.operations);
+		}
 
-	if (TokenType == Token_Variable) {
-		CreateVariableReferenceStr(item);
-		op.variable = reference;
-	}
-	else if (TokenType == Token_Int) {
-		Variable_t a = newIntVariable(*((int*)item), 1);
-		vecAdd(&staticVariableHolder, a);
-		CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
-		op.variable = reference;
-	}
-	else if (TokenType == Token_String) {
-		Variable_t a = newStringVariable(item, 1, 0);
-		vecAdd(&staticVariableHolder, a);
-		CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
-		op.variable = reference;
-	}
-	else if (TokenType == Token_Token) {
-		u8 token = *(u8*)item;
+		void* var = NULL;
+		u8 tokenType = nextToken(&in, &var);
 
-		if (token == Equals && lastOp) {
-			if (lastOp->token == Variable) {
-				if (lastOp->variable.staticVariableSet) {
-					gfx_printf("[FATAL] Trying to assign to a static variable");
+		Operator_t op = { .token = Variable };
+
+		// TODO: this should add based on lastHistory
+		if (tokenType >= Token_Variable && tokenType <= Token_Int && lastOp) {
+			if ((lastOp->token == Variable || lastOp->token == BetweenBrackets) && lastOp->variable.action != ActionSet) {
+				op.token = EquationSeperator;
+				if (*lastHistory == History_Function || *lastHistory == History_Bracket) {
+					vecAdd(&lastFunc->operations, op);
+				}
+				else if (*lastHistory == History_Array) {
+					vecAdd(&arrayHolder.operations, op);
+				}
+				op.token = Variable;
+			}
+		}
+
+		if (tokenType == Token_Variable) {
+			CreateVariableReferenceStr(var);
+			op.variable = reference;
+		}
+		else if (tokenType == Token_Int) {
+			Variable_t a = newIntVariable(*((s64*)var), 1);
+			free(var);
+			vecAdd(&staticVariableHolder, a);
+			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+			op.variable = reference;
+		}
+		else if (tokenType == Token_String) {
+			Variable_t a = newStringVariable(var, 1, 0);
+			vecAdd(&staticVariableHolder, a);
+			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+			op.variable = reference;
+		}
+		else if (tokenType == Token_Token) {
+			u8 token = (u8)var;
+
+			if (token == Equals && lastOp) {
+				if (lastOp->token == Variable) {
+					if (lastOp->variable.staticVariableSet) {
+						gfx_printf("[FATAL] Trying to assign to a static variable");
+					}
+					else {
+						lastOp->variable.action = ActionSet;
+						continue;
+					}
 				}
 				else {
-					lastOp->variable.action = ActionSet;
-					return;
+					gfx_printf("[FATAL] Trying to assign to non-object");
+				}
+			}
+			else if (token == LeftCurlyBracket) {
+				Function_t templateFunction = createEmptyFunction();
+				vecAdd(&functionStack, templateFunction);
+
+				StackHistory_t functionHistory = History_Function;
+				vecAdd(&stackHistoryHolder, functionHistory);
+				continue;
+			}
+			else if (token == RightCurlyBracket) {
+				if (stackHistoryHolder.count != 1 && *lastHistory == History_Function) {
+					Variable_t a = newFunctionVariable(createFunctionClass(*lastFunc, NULL));
+					popStackEntry(&functionStack);
+					popStackEntry(&stackHistoryHolder);
+
+					lastFunc = getStackEntry(&functionStack);
+
+					vecAdd(&staticVariableHolder, a);
+					CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+					op.variable = reference;
+				}
+				else {
+					gfx_printf("[FATAL] stack count is 1 or state is not a function");
+				}
+			}
+			else if (token == Dot) {
+				if (lastOp->token != Variable)
+					gfx_printf("[FATAL] member access on non-variable");
+				else {
+					tokenType = nextToken(&in, &var);
+					if (tokenType != Token_Variable) {
+						gfx_printf("[FATAL] acessing member with non-dynamic token");
+					}
+					else {
+						// Todo: Add onto linked list properly
+						lastOp->variable.extraAction = ActionExtraMemberName;
+						lastOp->variable.extra = var;
+						continue;
+					}
 				}
 			}
 			else {
-				gfx_printf("[FATAL] Trying to assign to non-object");
+				op.token = token;
 			}
 		}
-		else if (token == LeftCurlyBracket) {
-			Function_t templateFunction = createEmptyFunction();
-			vecAdd(&functionStack, templateFunction);
 
-			StackHistory_t functionHistory = History_Function;
-			vecAdd(&stackHistoryHolder, functionHistory);
-			return;
+		if (*lastHistory == History_Function) {
+			vecAdd(&lastFunc->operations, op);
 		}
-		else if (token == RightCurlyBracket) {
-			if (stackHistoryHolder.count != 1 && *lastHistory == History_Function) {
-				Variable_t a = newFunctionVariable(createFunctionClass(*lastFunc, NULL));
-				popStackEntry(&functionStack);
-				popStackEntry(&stackHistoryHolder);
-
-				lastFunc = getStackEntry(&functionStack);
-
-				vecAdd(&staticVariableHolder, a);
-				CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
-				op.variable = reference;
-			}
-			else {
-				gfx_printf("[FATAL] stack count is 1 or state is not a function");
-			}
+		else if (*lastHistory == History_Array) {
+			// stub
 		}
-		else {
-			op.token = token;
+		else if (*lastHistory == History_Bracket) {
+			// stub
 		}
 	}
 
-	if (*lastHistory == History_Function) {
-		vecAdd(&lastFunc->operations, op);
-	}
-	else if (*lastHistory == History_Array) {
-		// stub
-	}
-	else if (*lastHistory == History_Bracket) {
-		// stub
-	}
+	if (functionStack.count != 1 || stackHistoryHolder.count != 1)
+		gfx_printf("[FATAL] there seems to be an open bracket somewhere. EOF reached");
 
-	return 0;
+	ParserRet_t parse = { .main = (*(Function_t*)getStackEntry(&functionStack)), .staticVarHolder = staticVariableHolder };
+
+	vecFree(functionStack);
+	vecFree(stackHistoryHolder);
+
+	return parse;
 }
-
-/*
-int NextToken(u8 TokenType, void *item) {
-	Operator_t* operators = vecGetArray(script, Operator_t*);
-	Operator_t* lastOp = NULL;
-	if (script.count > 0) {
-		lastOp = &operators[script.count - 1];
-	}
-
-	Operator_t a = { 0 };
-
-	if (TokenType == Token_Variable) {
-		a.token = Variable;
-		VariableReference_t b = { 0 };
-		b.action = ActionGet;
-		b.name = item;
-		a.variable = b;
-	}
-	else if (TokenType == Token_Int) {
-		a.token = Variable;
-		VariableReference_t b = { 0 };
-		b.action = ActionGet;
-		b.staticVariableSet = 1;
-		b.staticVariable = newIntVariablePtr(*((int*)item), 1);
-		a.variable = b;
-	}
-	else if (TokenType == Token_String) {
-		a.token = Variable;
-		VariableReference_t b = { 0 };
-		b.action = ActionGet;
-		b.staticVariableSet = 1;
-		b.staticVariable = newStringVariablePtr(item, 1, 0);
-		a.variable = b;
-	}
-	else if (TokenType == Token_Token) {
-		u8 token = *(u8*)item;
-		if (token == Equals) {
-			if (lastOp->token == Variable) {
-				if (!lastOp->variable.staticVariableSet)
-					lastOp->variable.action = ActionSet;
-			}
-			else 
-				gfx_printf("[FATAL] cannot assign equals");
-
-			return;
-		}
-		else {
-			a.token = token;
-		}
-	}
-
-	vecAdd(&script, a);
-}
-*/

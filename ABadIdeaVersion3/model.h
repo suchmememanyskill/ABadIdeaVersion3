@@ -57,6 +57,7 @@ typedef enum {
 	Or,
 
 	EquationSeperator,
+	Dot,
 } Token_t;
 
 typedef enum {
@@ -149,7 +150,7 @@ typedef struct _VariableReference_t {
 		Variable_t* staticVariable;
 		char* name;
 	};
-	void* extra;
+	void* extra; // Function_t for arrayIdx, char* for member, Function_t for funcCall, Function_t x2 for funcCallArgs
 	struct _VariableReference_t* subcall;
 	union {
 		struct {

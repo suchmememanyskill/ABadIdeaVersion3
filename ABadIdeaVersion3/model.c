@@ -33,7 +33,8 @@ TokenConvertion_t tokenConvertions[] = {
 	{Bigger, ">"},
 	
 	{And, "&"},
-	{Or, "|"}
+	{Or, "|"},
+	{Dot, "."},
 };
 
 u32 tokenConvertionCount = ARRAY_SIZE(tokenConvertions);

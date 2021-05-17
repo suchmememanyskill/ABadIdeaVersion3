@@ -2,4 +2,9 @@
 #pragma once
 #include "vector.h"
 
-Function_t* StartParse(char* in);
+typedef struct {
+	Function_t main;
+	Vector_t staticVarHolder;
+} ParserRet_t;
+
+ParserRet_t parseScript(char* in);

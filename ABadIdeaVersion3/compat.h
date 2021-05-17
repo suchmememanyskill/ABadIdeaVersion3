@@ -7,4 +7,5 @@
 	#define LPVERSION_MAJOR 3
 	#define LPVERSION_MINOR 0
 	#define LPVERSION_BUGFX 5
+	#define FREE(x) if (x) free(x)
 #endif
