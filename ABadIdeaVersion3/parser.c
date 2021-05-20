@@ -390,8 +390,14 @@ ParserRet_t parseScript(char* in) {
 						continue;
 					}
 					else {
-						op.betweenBrackets = *bstack;
-						op.token = BetweenBrackets;
+						if (!countTokens(bstack, EquationSeperator)) {
+							op.betweenBrackets = *bstack;
+							op.token = BetweenBrackets;
+						}
+						else {
+							gfx_printf("[FATAL] Priority brackets can only contian 1 argument");
+ 						}
+
 					}
 				}
 				else {

@@ -45,7 +45,7 @@ ClassFunction(addIntVariables) {
 	if (!args)
 		return NULL;
 
-	Variable_t* a = args = vecGetArrayPtr(args, Variable_t*);
+	Variable_t* a = *args;
 	if (a->variableType != IntClass)
 		return NULL;
 
@@ -56,11 +56,16 @@ ClassFunction(addIntVariables) {
 }
 
 u8 oneVarArg[] = { VARARGCOUNT };
+u8 oneIntArg[] = { IntClass };
 
 ClassFunctionTableEntry_t intFunctions[] = {
 	{"__print__", printIntVariable, 0, 0},
-	{"+", addIntVariables, 1, oneVarArg},
+	{"+", addIntVariables, 1, oneIntArg },
 };
+
+Variable_t* getIntegerMember(Variable_t* var, char* memberName) {
+	return getGenericFunctionMember(var, memberName, intFunctions, ARRAY_SIZE(intFunctions));
+}
 
 Variable_t* intFunctionHandler(char* funcName, Variable_t* caller, VariableReference_t* reference, Vector_t* args) {
 	// TODO: implement arg count detection

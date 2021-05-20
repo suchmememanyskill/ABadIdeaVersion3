@@ -24,7 +24,20 @@ int main()
     
     //parseScript("#REQUIRE VER 3.0.5\nmain = { two = 1 + 1 }");
     //ParserRet_t ret = parseScript("a.b.c(1){ a.b.c() }");
-    ParserRet_t ret = parseScript("[].func()");
+    //ParserRet_t ret = parseScript("(1 1)");
 
     //gfx_printf("\na %d\n", getIntValue(&a));
+
+
+    Variable_t a = newIntVariable(69, 0);
+    Variable_t b = newIntVariable(1, 0);
+    VariableReference_t ref = { .action = ActionGet, .extraAction = ActionExtraMemberName, .extra = "+" };
+    Variable_t* c = genericGet(&a, &ref);
+    Variable_t* args[] = { &b };
+    Variable_t* d = genericCallDirect(c, args, 1);
+
+    ref.extra = "__print__";
+    Variable_t* e = genericGet(d, &ref);
+    Variable_t* f = genericCallDirect(e, NULL, 0);
+
 }

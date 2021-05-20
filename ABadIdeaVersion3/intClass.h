@@ -14,3 +14,4 @@ Variable_t* intFunctionHandler(char* funcName, Variable_t* caller, VariableRefer
 
 Variable_t newIntVariable(s64 x, u8 readOnly);
 #define newIntVariablePtr(x, readOnly) copyVariableToPtr(newIntVariable(x, readOnly))
+Variable_t* getIntegerMember(Variable_t* var, char* memberName);

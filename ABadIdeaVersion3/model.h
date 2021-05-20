@@ -94,7 +94,12 @@ typedef struct _FunctionClass_t {
 	};
 	union {
 		Function_t function;
-		struct _ClassFunctionTableEntry_t* builtInPtr;
+		struct {
+			struct _ClassFunctionTableEntry_t* builtInPtr;
+			struct _Variable_t* origin;
+			u8 len;
+		};
+		
 	};
 
 } FunctionClass_t;
@@ -129,7 +134,7 @@ typedef struct _StringClass_t {
 	};
 } StringClass_t;
 
-typedef struct {
+typedef struct { // Remove??
 	struct _ClassFunctionTableEntry_t* builtInPtr;
 	struct _Variable_t* parent;
 } MemberFunctionClass_t;
@@ -204,7 +209,7 @@ typedef struct {
 classFunctionTable classTableSearch(u8 classType);
 Variable_t* callClass(char* funcName, Variable_t* caller, VariableReference_t* ref, Vector_t* args);
 
-typedef Variable_t* (*ClassFunction)(Variable_t* caller, VariableReference_t* reference, Vector_t* args);
+typedef Variable_t* (*ClassFunction)(Variable_t* caller, Variable_t** args, u8 argsLen);
 
 typedef struct _ClassFunctionTableEntry_t {
 	char* name;
