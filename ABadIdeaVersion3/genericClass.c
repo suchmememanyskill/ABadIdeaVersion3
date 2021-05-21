@@ -2,6 +2,7 @@
 #include "model.h"
 #include "intClass.h"
 #include "compat.h"
+#include "eval.h"
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
@@ -16,7 +17,7 @@ MemberGetters_t memberGetters[] = {
 	{IntClass, getIntegerMember},
 };
 
-Variable_t* genericGet(Variable_t* var, VariableReference_t* ref) {
+Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 	if (ref->extraAction == ActionExtraMemberName) {
 		for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
 			if (var->variableType == memberGetters[i].classType)
@@ -25,10 +26,6 @@ Variable_t* genericGet(Variable_t* var, VariableReference_t* ref) {
 	}
 
 	return NULL;
-}
-
-Variable_t* genericCall(Variable_t* var, VariableReference_t* ref) {
-	// Stubbed
 }
 
 Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
@@ -61,6 +58,21 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 	return NULL;
 }
 
+Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
+	if (var->variableType != FunctionClass)
+		return NULL;
+
+	if (var->function.builtIn) {
+		// TODO: implement arg handling
+
+		return genericCallDirect(var, NULL, 0);
+	}
+	else {
+		eval(var->function.function.operations.data, var->function.function.operations.count, 0);
+		return &emptyClass;
+	}
+}
+
 Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunctionTableEntry_t* entries, u8 len) {
 	Variable_t newVar = {.readOnly = 1, .variableType = FunctionClass};
 	newVar.function.origin = var;
@@ -74,6 +86,16 @@ Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFun
 			newVar.function.len = j - i;
 
 			return copyVariableToPtr(newVar);
+		}
+	}
+
+	return NULL;
+}
+
+Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** other) {
+	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
+		if (var->variableType == memberGetters[i].classType) {
+			return genericCallDirect(memberGetters[i].func(var, memberName), other, 1);
 		}
 	}
 

@@ -115,7 +115,7 @@ u8 nextToken(char** inPtr, void** val) {
 
 			char* str = utils_copyStringSize(startWord, in - startWord);
 
-			gfx_printf("Variable: '%s'\n", str);
+			//gfx_printf("Variable: '%s'\n", str);
 			ret = Token_Variable;
 			*val = str;
 			break;
@@ -140,7 +140,7 @@ u8 nextToken(char** inPtr, void** val) {
 			if (negative)
 				parse *= -1;
 
-			gfx_printf("Integer: '%d'\n", parse);
+			//gfx_printf("Integer: '%d'\n", parse);
 			ret = Token_Int;
 
 			s64* parsePersistent = malloc(sizeof(s64));
@@ -178,7 +178,7 @@ u8 nextToken(char** inPtr, void** val) {
 			}
 			storage[pos] = '\0';
 
-			gfx_printf("String: '%s'\n", storage);
+			//gfx_printf("String: '%s'\n", storage);
 			ret = Token_String;
 			*val = storage;
 		}
@@ -186,7 +186,7 @@ u8 nextToken(char** inPtr, void** val) {
 			for (u32 i = 0; i < tokenConvertionCount; i++) {
 				TokenConvertion_t t = tokenConvertions[i];
 				if (!memcmp(t.strToken, in, (t.strToken[1] == '\0') ? 1 : 2)) {
-					gfx_printf("Token: '%s'\n", t.strToken);
+					//gfx_printf("Token: '%s'\n", t.strToken);
 					ret = Token_Token;
 					*val = t.token;
 
@@ -204,32 +204,37 @@ u8 nextToken(char** inPtr, void** val) {
 	return ret;
 }
 
-#define CreateVariableReferenceStatic(var) VariableReference_t reference = { .staticVariable = var, .action = ActionGet, .staticVariableSet = 1, .staticVariableRef = 1 }
-#define CreateVariableReferenceStr(str) VariableReference_t reference = { .name = str, .action = ActionGet }
+#define CreateVariableReferenceStatic(var) VariableReference_t reference = { .staticVariable = var, .staticVariableSet = 1, .staticVariableRef = 1 }
+#define CreateVariableReferenceStr(str) VariableReference_t reference = { .name = str }
 
-void setLastActionVariableRef(VariableReference_t* ref, ActionType_t action) {
-	for (; ref->subcall != NULL; ref = ref->subcall);
-	ref->action = action;
-}
+void setNextActionOperator(Vector_t *opHolder, ActionType_t action, ActionExtraType_t actionExtra, void *extra) {
+	Operator_t* ops = opHolder->data;
+	Operator_t* lastOp = &ops[opHolder->count - 1];
 
-void addExtraOnVariableRef(VariableReference_t *ref, ActionExtraType_t actionExtra, void *extra) {
-	for (; ref->subcall != NULL; ref = ref->subcall);
-	// Check for FuncCall -> FuncCallArgs?
-	if (ref->extraAction == ActionExtraNone) {
-		ref->extraAction = actionExtra;
-		ref->extra = extra;
+	if (lastOp->token == CallArgs) {
+		CallArgs_t* last = &lastOp->callArgs;
+		for (; last->next != NULL; last = last->next);
+		last->next = calloc(sizeof(CallArgs_t), 1);
+		last->next->action = action;
+		last->next->extra = extra;
+		last->next->extraAction = actionExtra;
 	}
 	else {
-		VariableReference_t* newRef = calloc(1, sizeof(VariableReference_t));
-		newRef->extraAction = actionExtra;
-		newRef->extra = extra;
-		ref->subcall = newRef;
+		Operator_t newOp = { .token = CallArgs };
+		newOp.callArgs.action = action;
+		newOp.callArgs.extra = extra;
+		newOp.callArgs.extraAction = actionExtra;
+		vecAdd(opHolder, newOp);
 	}
 }
 
-VariableReference_t* getLastRef(VariableReference_t* ref) {
-	for (; ref->subcall != NULL; ref = ref->subcall);
+CallArgs_t* getLastRef(CallArgs_t* ref) {
+	for (; ref->next != NULL; ref = ref->next);
 	return ref;
+}
+
+int isLastVarSet(Operator_t* opHolder) {
+	return (opHolder->token == CallArgs && getLastRef(&opHolder->callArgs)->action == ActionSet);
 }
 
 ParserRet_t parseScript(char* in) {
@@ -246,6 +251,7 @@ ParserRet_t parseScript(char* in) {
 	stackHistoryHolder = newVec(sizeof(StackHistory_t), 1);
 	StackHistory_t firstHistory = History_Function;
 	vecAdd(&stackHistoryHolder, firstHistory);
+	u8 notNext = 0;
 
 	while (*in) {
 		Function_t* lastFunc = getStackEntry(&functionStack);
@@ -263,7 +269,7 @@ ParserRet_t parseScript(char* in) {
 		Operator_t op = { .token = Variable };
 
 		if (tokenType >= Token_Variable && tokenType <= Token_Int && lastOp) {
-			if ((lastOp->token == Variable || lastOp->token == BetweenBrackets) && lastOp->variable.action != ActionSet) {
+			if (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp))) {
 				op.token = EquationSeperator;
 				vecAdd(&lastFunc->operations, op);
 				op.token = Variable;
@@ -296,9 +302,13 @@ ParserRet_t parseScript(char* in) {
 						gfx_printf("[FATAL] Trying to assign to a static variable");
 					}
 					else {
-						lastOp->variable.action = ActionSet;
+						setNextActionOperator(&lastFunc->operations, ActionSet, ActionExtraNone, NULL);
 						continue;
 					}
+				}
+				else if (lastOp->token == CallArgs) {
+					CallArgs_t* last = getLastRef(&lastOp->callArgs);
+					last->action = ActionSet;
 				}
 				else {
 					gfx_printf("[FATAL] Trying to assign to non-object");
@@ -323,41 +333,42 @@ ParserRet_t parseScript(char* in) {
 						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
-					if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
-						VariableReference_t* lastRef = getLastRef(&lastOp->variable);
-						if (lastRef->extraAction == ActionExtraCallArgs) {
-							Function_t* funcArgs = lastRef->extra;
+					if (lastOp && (lastOp->token == Variable || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
+						if (lastOp->token == Variable) {
+							gfx_printf("[FATAL] GET variable before {}");
+							continue;
+						}
+						
+						CallArgs_t* lastCall = getLastRef(&lastOp->callArgs);
+						if (lastCall->extraAction == ActionExtraCallArgs) {
+							Function_t* funcArgs = lastCall->extra;
 							Function_t* newFuncArgs = malloc(sizeof(Function_t) * 2);
 							newFuncArgs[0] = *funcArgs;
 							newFuncArgs[1] = *popFunc;
 							free(funcArgs);
-							lastRef->extra = newFuncArgs;
-							lastRef->extraAction = ActionExtraCallArgsFunction;
+							lastCall->extra = newFuncArgs;
+							lastCall->extraAction = ActionExtraCallArgsFunction;
 							continue;
 						}
-						else {
-							gfx_printf("[FATAL] {} after variable?? is this valid??");
-						}
 					}
-					else {
-						Variable_t a = newFunctionVariable(createFunctionClass(*popFunc, NULL));
-						vecAdd(&staticVariableHolder, a);
-						CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
-						op.variable = reference;
-					}
+
+					Variable_t a = newFunctionVariable(createFunctionClass(*popFunc, NULL));
+					vecAdd(&staticVariableHolder, a);
+					CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+					op.variable = reference;
 				}
 				else {
 					gfx_printf("[FATAL] stack count is 1 or state is not a function");
 				}
 			}
 			else if (token == Dot) {
-				if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
+				if (lastOp && (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
 					tokenType = nextToken(&in, &var);
 					if (tokenType != Token_Variable) {
 						gfx_printf("[FATAL] acessing member with non-dynamic token");
 					}
 					else {
-						addExtraOnVariableRef(&lastOp->variable, ActionExtraMemberName, var);
+						setNextActionOperator(&lastFunc->operations, ActionGet, ActionExtraMemberName, var);
 						continue;
 					}
 				}
@@ -383,15 +394,16 @@ ParserRet_t parseScript(char* in) {
 						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
-					if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
+					if (lastOp && (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
 						Function_t* newBStack = malloc(sizeof(Function_t));
 						*newBStack = *bstack;
-						addExtraOnVariableRef(&lastOp->variable, ActionExtraCallArgs, newBStack);
+						setNextActionOperator(&lastFunc->operations, ActionCall, ActionExtraCallArgs, newBStack); // Maybe pass NULL if array is empty?
 						continue;
 					}
 					else {
 						if (!countTokens(bstack, EquationSeperator)) {
-							op.betweenBrackets = *bstack;
+							op.variable.betweenBrackets.data = bstack->operations.data;
+							op.variable.betweenBrackets.len = bstack->operations.count;
 							op.token = BetweenBrackets;
 						}
 						else {
@@ -422,11 +434,11 @@ ParserRet_t parseScript(char* in) {
 						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
-					if (lastOp && lastOp->token == Variable && (getLastRef(&lastOp->variable)->action != ActionSet)) {
+					if (lastOp && (lastOp->token == Variable || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
 						if (!countTokens(astack, EquationSeperator)) {
 							Function_t* newAStack = malloc(sizeof(Function_t));
 							*newAStack = *astack;
-							addExtraOnVariableRef(&lastOp->variable, ActionExtraArrayIndex, newAStack);
+							setNextActionOperator(&lastFunc->operations, ActionGet, ActionExtraArrayIndex, newAStack);
 							continue;
 						}
 						else {
@@ -445,9 +457,25 @@ ParserRet_t parseScript(char* in) {
 					gfx_printf("[FATAL] ] without [");
 				}
 			}
+			else if (token == Not) {
+				notNext = !notNext;
+				continue;
+			}
 			else {
 				op.token = token;
+
+				for (u32 i = 0; i < tokenConvertionCount; i++) {
+					if (token == tokenConvertions[i].token) {
+						op.tokenStr = tokenConvertions[i].strToken;
+						break;
+					}
+				}
 			}
+		}
+
+		if (notNext) {
+			op.not = 1;
+			notNext = 0;
 		}
 
 		vecAdd(&lastFunc->operations, op);

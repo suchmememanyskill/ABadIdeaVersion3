@@ -22,6 +22,7 @@ typedef enum {
 	ArrayClass,
 	UnresolvedArrayClass,
 	DictionaryClass,
+	EmptyClass,
 	MemberFunctionClass,
 } VariableType_t;
 
@@ -61,6 +62,7 @@ typedef enum {
 
 	EquationSeperator,
 	Dot,
+	CallArgs,
 } Token_t;
 
 typedef enum {
@@ -159,20 +161,29 @@ typedef struct _Variable_t {
 	};
 } Variable_t;
 
-typedef struct _VariableReference_t {
-	union {
-		Variable_t* staticVariable;
-		char* name;
+typedef struct _CallArgs_t {
+	struct {
+		u8 action : 4;
+		u8 extraAction : 4;
 	};
 	void* extra; // Function_t for arrayIdx, char* for member, Function_t for funcCall, Function_t x2 for funcCallArgs
-	struct _VariableReference_t* subcall;
+	struct _CallArgs_t* next;
+} CallArgs_t;
+
+typedef struct {
+	void* data;
+	u32 len;
+} Array_t;
+
+typedef struct _VariableReference_t {
 	union {
 		struct {
-			u8 action : 3;
-			u8 extraAction : 3;
+			Variable_t* staticVariable;
 			u8 staticVariableSet : 1;
 			u8 staticVariableRef : 1;
 		};
+		char* name;
+		Array_t betweenBrackets;
 	};
 } VariableReference_t;
 
@@ -198,11 +209,14 @@ typedef struct {
 } Equation_t;
 
 typedef struct {
-	Token_t token : 7;
-	u8 not : 1;
+	struct {
+		Token_t token : 7;
+		u8 not : 1;
+	};
 	union {
 		VariableReference_t variable;
-		Function_t betweenBrackets;
+		CallArgs_t callArgs;
+		char* tokenStr;
 	};
 } Operator_t;
 
@@ -217,3 +231,5 @@ typedef struct _ClassFunctionTableEntry_t {
 	u8 argCount;
 	u8* argTypes;
 } ClassFunctionTableEntry_t;
+
+extern Variable_t emptyClass;

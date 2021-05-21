@@ -16,5 +16,7 @@ typedef struct {
 } MemberGetters_t;
 
 Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunctionTableEntry_t* entries, u8 len);
-Variable_t* genericGet(Variable_t* var, VariableReference_t* ref);
+Variable_t* genericGet(Variable_t* var, CallArgs_t* ref);
 Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len);
+Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** other);
+Variable_t* genericCall(Variable_t* var, CallArgs_t* ref);

@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="ABadIdeaVersion3.c" />
     <ClCompile Include="arrayClass.c" />
+    <ClCompile Include="eval.c" />
     <ClCompile Include="functionClass.c" />
     <ClCompile Include="genericClass.c" />
     <ClCompile Include="intClass.c" />
@@ -154,6 +155,7 @@
     <ClInclude Include="arrayClass.h" />
     <ClInclude Include="compat.h" />
     <ClInclude Include="dictionaryClass.h" />
+    <ClInclude Include="eval.h" />
     <ClInclude Include="functionClass.h" />
     <ClInclude Include="genericClass.h" />
     <ClInclude Include="intClass.h" />

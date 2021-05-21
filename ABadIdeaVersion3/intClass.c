@@ -38,7 +38,7 @@ ClassFunction(printIntVariable) {
 		IntClass_t* a = &caller->integer;
 		gfx_printf("%d", a->value);
 	}
-	return NULL;
+	return &emptyClass;
 }
 
 ClassFunction(addIntVariables) {
@@ -46,8 +46,6 @@ ClassFunction(addIntVariables) {
 		return NULL;
 
 	Variable_t* a = *args;
-	if (a->variableType != IntClass)
-		return NULL;
 
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(a);
@@ -59,7 +57,7 @@ u8 oneVarArg[] = { VARARGCOUNT };
 u8 oneIntArg[] = { IntClass };
 
 ClassFunctionTableEntry_t intFunctions[] = {
-	{"__print__", printIntVariable, 0, 0},
+	{"print", printIntVariable, 0, 0},
 	{"+", addIntVariables, 1, oneIntArg },
 };
 

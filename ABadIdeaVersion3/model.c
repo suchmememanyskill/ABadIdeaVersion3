@@ -70,3 +70,6 @@ Variable_t* callClass(char* funcName, Variable_t* caller, VariableReference_t* r
 
 	return NULL;
 }
+
+
+Variable_t emptyClass = { .variableType = EmptyClass, .readOnly = 1, .reference = 1 };
