@@ -237,6 +237,10 @@ int isLastVarSet(Operator_t* opHolder) {
 	return (opHolder->token == CallArgs && getLastRef(&opHolder->callArgs)->action == ActionSet);
 }
 
+int isLastVarCall(Operator_t* opHolder) {
+	return (opHolder->token == CallArgs && getLastRef(&opHolder->callArgs)->action == ActionCall);
+}
+
 ParserRet_t parseScript(char* in) {
 	Vector_t functionStack; // Function_t
 	Vector_t stackHistoryHolder; // StaticHistory_t
@@ -282,6 +286,7 @@ ParserRet_t parseScript(char* in) {
 		}
 		else if (tokenType == Token_Int) {
 			Variable_t a = newIntVariable(*((s64*)var), 1);
+			a.gcDoNotFree = 1;
 			free(var);
 			vecAdd(&staticVariableHolder, a);
 			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
@@ -289,6 +294,7 @@ ParserRet_t parseScript(char* in) {
 		}
 		else if (tokenType == Token_String) {
 			Variable_t a = newStringVariable(var, 1, 0);
+			a.gcDoNotFree = 1;
 			vecAdd(&staticVariableHolder, a);
 			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 			op.variable = reference;
@@ -394,13 +400,18 @@ ParserRet_t parseScript(char* in) {
 						lastOp = getStackEntry(&lastFunc->operations);
 					}
 
-					if (lastOp && (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
+					if (lastOp && (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp) && !isLastVarCall(lastOp)))) {
 						Function_t* newBStack = malloc(sizeof(Function_t));
 						*newBStack = *bstack;
 						setNextActionOperator(&lastFunc->operations, ActionCall, ActionExtraCallArgs, newBStack); // Maybe pass NULL if array is empty?
 						continue;
 					}
 					else {
+						if (lastOp && isLastVarCall(lastOp)) {
+							op.token = EquationSeperator;
+							vecAdd(&lastFunc->operations, op);
+						}
+
 						if (!countTokens(bstack, EquationSeperator)) {
 							op.variable.betweenBrackets.data = bstack->operations.data;
 							op.variable.betweenBrackets.len = bstack->operations.count;

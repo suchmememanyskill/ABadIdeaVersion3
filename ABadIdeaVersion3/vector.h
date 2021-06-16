@@ -15,5 +15,8 @@ Vector_t vecFromArray(void* array, u32 count, u32 typesz);
 #define vecFree(vec) FREE(vec.data)
 #define vecGetCapacity(vec) (vec.capacity / vec.elemSz)
 
+#define vecForEach(type, varname, vecPtr) for (type varname = vecPtr->data; ((u8*)varname - (u8*)vecPtr->data) < (vecPtr->count * vecPtr->elemSz); varname++)
+
 void* getStackEntry(Vector_t* stack);
 void* popStackEntry(Vector_t* stack);
+void vecRem(Vector_t * vec, int idx);

@@ -72,4 +72,4 @@ Variable_t* callClass(char* funcName, Variable_t* caller, VariableReference_t* r
 }
 
 
-Variable_t emptyClass = { .variableType = EmptyClass, .readOnly = 1, .reference = 1 };
+Variable_t emptyClass = { .variableType = EmptyClass, .readOnly = 1, .reference = 1, .gcDoNotFree = 1 };

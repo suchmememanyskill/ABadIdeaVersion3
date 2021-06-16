@@ -6,10 +6,12 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
+#include "garbageCollector.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
 	*a = var;
+	addPendingReference(a);
 	return a;
 }
 
@@ -75,6 +77,7 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 
 Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunctionTableEntry_t* entries, u8 len) {
 	Variable_t newVar = {.readOnly = 1, .variableType = FunctionClass};
+	addPendingReference(var); // So caller doesn't fall out of scope. Don't forget to free!
 	newVar.function.origin = var;
 	newVar.function.builtIn = 1;
 	for (u32 i = 0; i < len; i++) {
@@ -95,9 +98,19 @@ Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFun
 Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** other) {
 	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
 		if (var->variableType == memberGetters[i].classType) {
-			return genericCallDirect(memberGetters[i].func(var, memberName), other, 1);
+			Variable_t* funcRef = memberGetters[i].func(var, memberName);
+			Variable_t* callRes = genericCallDirect(funcRef, other, 1);
+			removePendingReference(funcRef);
+			return callRes;
 		}
 	}
 
 	return NULL;
+}
+
+void freeVariable(Variable_t** target) {
+	// Add specific freeing logic here
+
+	FREE(*target);
+	*target = NULL;
 }

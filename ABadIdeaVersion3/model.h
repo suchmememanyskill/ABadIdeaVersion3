@@ -154,9 +154,11 @@ typedef struct _Variable_t {
 	};
 	union {
 		struct {
-			VariableType_t variableType : 4;
+			u8 variableType : 4;
 			u8 readOnly : 1;
 			u8 reference : 1;
+			u8 freeAtEnd : 1;
+			u8 gcDoNotFree : 1;
 		};
 	};
 } Variable_t;

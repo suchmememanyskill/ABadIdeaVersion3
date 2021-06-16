@@ -4,6 +4,7 @@
 #include "intClass.h"
 #include "StringClass.h"
 #include "eval.h"
+#include "garbageCollector.h"
 
 int main()
 {
@@ -22,13 +23,30 @@ int main()
     Variable_t *d = callClass("+", &a, NULL, &fuk);
     callClass("__print__", d, NULL, NULL);
     */
+    /*
+    Vector_t v = newVec(sizeof(int), 4);
+    int a = 69;
+    vecAdd(&v, a);
+    vecAdd(&v, a);
+    vecAdd(&v, a);
+    vecAdd(&v, a);
+
+    vecForEach(int*, b, (&v))
+        printf("%d\n", *b);
+
+    return;
+    */
     
+    initGarbageCollector();
+
     //parseScript("#REQUIRE VER 3.0.5\nmain = { two = 1 + 1 }");
     //ParserRet_t ret = parseScript("a.b.c(1){ a.b.c() }");
-    ParserRet_t ret = parseScript("(1 + 2).print()");
+    ParserRet_t ret = parseScript("(1 + 1).print()");
 
     setStaticVars(&ret.staticVarHolder);
     Variable_t* res = eval(ret.main.operations.data, ret.main.operations.count, 1);
+
+    exitGarbageCollector();
 
     //gfx_printf("\na %d\n", getIntValue(&a));
 

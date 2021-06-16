@@ -42,13 +42,8 @@ ClassFunction(printIntVariable) {
 }
 
 ClassFunction(addIntVariables) {
-	if (!args)
-		return NULL;
-
-	Variable_t* a = *args;
-
 	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(a);
+	s64 i2 = getIntValue(*args);
 
 	return newIntVariablePtr((i1 + i2), 0);
 }

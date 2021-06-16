@@ -20,3 +20,4 @@ Variable_t* genericGet(Variable_t* var, CallArgs_t* ref);
 Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len);
 Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** other);
 Variable_t* genericCall(Variable_t* var, CallArgs_t* ref);
+void freeVariable(Variable_t** target);

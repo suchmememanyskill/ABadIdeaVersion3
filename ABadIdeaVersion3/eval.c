@@ -2,7 +2,7 @@
 #include "compat.h"
 #include "genericClass.h"
 #include "eval.h"
-#include <stdio.h>
+#include "garbageCollector.h"
 
 Variable_t* staticVars;
 
@@ -30,6 +30,7 @@ Variable_t* opToVar(Operator_t* op) {
 			var = op->variable.staticVariable;
 			var->readOnly = 1;
 			var->reference = 1;
+			var->gcDoNotFree = 1;
 		}
 		else {
 			// Stubbed
@@ -37,16 +38,24 @@ Variable_t* opToVar(Operator_t* op) {
 	}
 
 	while (args) {
+		Variable_t* varNext = NULL;
 		if (args->action == ActionGet) {
-			var = genericGet(var, args);
+			varNext = genericGet(var, args);
 		}
 		else if (args->action == ActionSet) {
 			gfx_printf("[FATAL] Unexpected set!");
 		}
 		else if (args->action == ActionCall) {
-			var = genericCall(var, args);
+			varNext = genericCall(var, args);
 		}
 
+
+		removePendingReference(var);
+
+		//if (!var->reference)
+		//	freeVariable(&var);
+
+		var = varNext;
 		args = args->next;
 	}
 
@@ -60,6 +69,17 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 	Operator_t* curOp = NULL;
 	for (u32 i = 0; i < len; i++) {
 		Operator_t* cur = &ops[i];
+
+		if (cur->token == CallArgs)
+			continue;
+
+		if (cur->token == EquationSeperator) {
+			removePendingReference(curRes);
+
+			curRes = NULL;
+			curOp = NULL;
+			continue;
+		}
 
 		if (curRes == NULL) {
 			if (cur->token != Variable && cur->token != BetweenBrackets)
@@ -90,6 +110,11 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 
 		Variable_t* result = callMemberFunctionDirect(curRes, curOp->tokenStr, &rightSide);
 		// Free old values
+
+		removePendingReference(curRes);
+		removePendingReference(rightSide);
+		rightSide = NULL;
+
 		curRes = result;
 	}
 

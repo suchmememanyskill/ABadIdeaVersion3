@@ -91,3 +91,16 @@ void* popStackEntry(Vector_t* stack) {
 	stack->count--;
 	return a;
 }
+
+void vecRem(Vector_t *vec, int idx) {
+	if (vec->count <= 0 || idx >= vec->count)
+		return;
+
+	if (idx == (vec->count - 1)) {
+		vec->count--;
+		return;
+	}
+
+	memcpy((u8*)vec->data + (vec->elemSz * idx), (u8*)vec->data + (vec->elemSz * (idx + 1)), (vec->count - idx - 1) * vec->elemSz);
+	vec->count--;
+}

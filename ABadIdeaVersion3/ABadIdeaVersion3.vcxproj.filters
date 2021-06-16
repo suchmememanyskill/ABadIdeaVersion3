@@ -48,6 +48,9 @@
     <ClCompile Include="eval.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="garbageCollector.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="compat.h">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="eval.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="garbageCollector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
