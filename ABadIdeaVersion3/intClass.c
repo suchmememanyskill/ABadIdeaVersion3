@@ -16,18 +16,6 @@ IntClass_t createIntClass(s64 in) {
 	return a;
 }
 
-IntClass_t* createIntClassPtr(s64 in) {
-	IntClass_t* a = malloc(sizeof(IntClass_t));
-	*a = createIntClass(in);
-	return a;
-}
-/*
-Variable_t* freeIntVariable(Variable_t* in) {
-	free(in->variable);
-	return NULL;
-}
-*/
-
 Variable_t newIntVariable(s64 x, u8 readOnly) {
 	Variable_t var = { .variableType = IntClass, .readOnly = readOnly, .integer = createIntClass(x) };
 	return var;
@@ -58,16 +46,4 @@ ClassFunctionTableEntry_t intFunctions[] = {
 
 Variable_t* getIntegerMember(Variable_t* var, char* memberName) {
 	return getGenericFunctionMember(var, memberName, intFunctions, ARRAY_SIZE(intFunctions));
-}
-
-Variable_t* intFunctionHandler(char* funcName, Variable_t* caller, VariableReference_t* reference, Vector_t* args) {
-	// TODO: implement arg count detection
-	for (u32 i = 0; i < ARRAY_SIZE(intFunctions); i++) {
-		if (!strcmp(funcName, intFunctions[i].name)) {
-			return intFunctions[i].func(caller, reference, args);
-		}
-	}
-
-	gfx_printf("[FATAL] function %s not found", funcName);
-	return NULL;
 }
