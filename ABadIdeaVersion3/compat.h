@@ -9,4 +9,5 @@
 	#define LPVERSION_MINOR 0
 	#define LPVERSION_BUGFX 5
 	#define FREE(x) if (x) free(x)
+	#pragma _CRT_SECURE_NO_WARNINGS
 #endif

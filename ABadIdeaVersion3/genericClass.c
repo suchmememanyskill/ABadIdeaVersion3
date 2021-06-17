@@ -3,10 +3,9 @@
 #include "intClass.h"
 #include "compat.h"
 #include "eval.h"
-#include <malloc.h>
 #include <string.h>
-#include <stdio.h>
 #include "garbageCollector.h"
+#include "StringClass.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
@@ -17,6 +16,7 @@ Variable_t* copyVariableToPtr(Variable_t var) {
 
 MemberGetters_t memberGetters[] = {
 	{IntClass, getIntegerMember},
+	{StringClass, getStringMember}
 };
 
 Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {

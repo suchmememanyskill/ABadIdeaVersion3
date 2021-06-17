@@ -1,7 +1,8 @@
 #include "StringClass.h"
 #include "compat.h"
 #include "vector.h"
-#include <malloc.h>
+#include "intClass.h"
+#include <string.h>
 
 char* getStringValue(Variable_t* var) {
 	if (var->variableType != StringClass)
@@ -28,9 +29,33 @@ ClassFunction(printStringVariable) {
 		StringClass_t* a = &caller->string;
 		gfx_printf("%s", a->value);
 	}
-	return NULL;
+	return &emptyClass;
 }
 
+ClassFunction(addStringVariables) {
+	char* s1 = getStringValue(caller);
+	char* s2 = getStringValue(*args);
+
+	char* n = malloc(strlen(s1) + strlen(s2) + 1);
+	strcpy(n, s1);
+	strcat(n, s2);
+
+	return newStringVariablePtr(n, 0, 1);
+}
+
+ClassFunction(getStringLength) {
+	char* s1 = getStringValue(caller);
+	return newIntVariablePtr(strlen(s1), 0);
+}
+
+u8 oneStringArg[] = { StringClass };
+
 ClassFunctionTableEntry_t stringFunctions[] = {
-	{"__print__", printStringVariable, 0, 0},
+	{"print", printStringVariable, 0, 0},
+	{"+", addStringVariables, 1, oneStringArg },
+	{"len", getStringLength, 0, 0},
 };
+
+Variable_t* getStringMember(Variable_t* var, char* memberName) {
+	return getGenericFunctionMember(var, memberName, stringFunctions, ARRAY_SIZE(stringFunctions));
+}

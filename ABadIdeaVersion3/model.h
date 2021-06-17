@@ -222,9 +222,6 @@ typedef struct {
 	};
 } Operator_t;
 
-classFunctionTable classTableSearch(u8 classType);
-Variable_t* callClass(char* funcName, Variable_t* caller, VariableReference_t* ref, Vector_t* args);
-
 typedef Variable_t* (*ClassFunction)(Variable_t* caller, Variable_t** args, u8 argsLen);
 
 typedef struct _ClassFunctionTableEntry_t {
