@@ -19,11 +19,12 @@ typedef enum {
 	IntClass,
 	FunctionClass,
 	StringClass,
-	ArrayClass,
+	ByteArrayClass,
+	StringArrayClass,
+	IntArrayClass,
 	UnresolvedArrayClass,
 	DictionaryClass,
 	EmptyClass,
-	MemberFunctionClass,
 } VariableType_t;
 
 typedef enum {
@@ -114,7 +115,6 @@ typedef enum {
 
 typedef struct {
 	Vector_t vector; // vector of typeof(value)
-	ArrayType_t type : 8;
 } ArrayClass_t;
 
 typedef struct _UnsolvedArrayClass_t {
@@ -136,11 +136,6 @@ typedef struct _StringClass_t {
 	};
 } StringClass_t;
 
-typedef struct { // Remove??
-	struct _ClassFunctionTableEntry_t* builtInPtr;
-	struct _Variable_t* parent;
-} MemberFunctionClass_t;
-
 typedef struct _Variable_t {
 	//void* variable;
 	union {
@@ -150,7 +145,6 @@ typedef struct _Variable_t {
 		IntClass_t integer;
 		StringClass_t string;
 		ArrayClass_t solvedArray;
-		MemberFunctionClass_t functionMember;
 	};
 	union {
 		struct {
@@ -220,6 +214,7 @@ typedef struct {
 		CallArgs_t callArgs;
 		char* tokenStr;
 	};
+	// probably should add u16 lineNum here
 } Operator_t;
 
 typedef Variable_t* (*ClassFunction)(Variable_t* caller, Variable_t** args, u8 argsLen);

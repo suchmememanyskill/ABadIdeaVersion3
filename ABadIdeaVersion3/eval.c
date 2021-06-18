@@ -49,6 +49,8 @@ Variable_t* opToVar(Operator_t* op) {
 			varNext = genericCall(var, args);
 		}
 
+		if (varNext == NULL)
+			return NULL;
 
 		removePendingReference(var);
 
@@ -116,6 +118,11 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 		rightSide = NULL;
 
 		curRes = result;
+	}
+
+	if (!ret) {
+		removePendingReference(curRes);
+		return NULL;
 	}
 
 	return curRes;

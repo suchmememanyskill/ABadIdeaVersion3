@@ -30,8 +30,13 @@ void removePendingReference(Variable_t* ref) {
 	if (ref == NULL)
 		return;
 
-	if (!ref->gcDoNotFree)
+	if (!ref->gcDoNotFree) {
+		if (ref->variableType == FunctionClass && ref->function.builtIn) {
+			removePendingReference(ref->function.origin);
+		}
 		vecAdd(&pendingRemove, ref);
+	}
+		
 }
 
 void modReference(Variable_t* ref, u8 add) {

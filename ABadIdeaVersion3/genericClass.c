@@ -6,6 +6,7 @@
 #include <string.h>
 #include "garbageCollector.h"
 #include "StringClass.h"
+#include "arrayClass.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
@@ -16,8 +17,13 @@ Variable_t* copyVariableToPtr(Variable_t var) {
 
 MemberGetters_t memberGetters[] = {
 	{IntClass, getIntegerMember},
-	{StringClass, getStringMember}
+	{StringClass, getStringMember},
+	{IntArrayClass, getArrayMember},
+	{StringArrayClass, getArrayMember},
+	{ByteArrayClass, getArrayMember},
 };
+
+
 
 Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 	if (ref->extraAction == ActionExtraMemberName) {
@@ -25,6 +31,15 @@ Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 			if (var->variableType == memberGetters[i].classType)
 				return memberGetters[i].func(var, ref->extra);
 		}
+	}
+	else if (ref->extraAction == ActionExtraArrayIndex) {
+		Function_t* idx = ref->extra;
+		Variable_t *solvedIdx = eval(idx->operations.data, idx->operations.count, 1);
+		removePendingReference(solvedIdx);
+		if (solvedIdx->variableType != IntClass)
+			return NULL;
+
+		return callMemberFunctionDirect(var, "get", &solvedIdx);
 	}
 
 	return NULL;
@@ -67,7 +82,37 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 	if (var->function.builtIn) {
 		// TODO: implement arg handling
 
-		return genericCallDirect(var, NULL, 0);
+		Function_t* f = ref->extra;
+		if (f->operations.count == 0) {
+			return genericCallDirect(var, NULL, 0);
+		}
+		else {
+			Vector_t argsHolder = newVec(sizeof(Variable_t*), 1);
+			int lasti = 0;
+			Operator_t* ops = f->operations.data;
+
+			// Loops trough the function to get all args out
+			for (int i = 0; i < f->operations.count; i++) {
+				if (ops[i].token == BetweenBrackets || i + 1 == f->operations.count) {
+					if (i + 1 == f->operations.count)
+						i++;
+
+					Variable_t* var = eval(&ops[lasti], i - lasti, 1);
+					if (var == NULL)
+						return NULL; // maybe free first?
+
+					lasti = i;
+					vecAdd(&argsHolder, var);
+				}
+			}
+
+			Variable_t *res = genericCallDirect(var, argsHolder.data, argsHolder.count);
+
+			vecForEach(Variable_t*, tofree, (&argsHolder))
+				removePendingReference(tofree);
+
+			return res;
+		}
 	}
 	else {
 		eval(var->function.function.operations.data, var->function.function.operations.count, 0);
@@ -77,7 +122,6 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 
 Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunctionTableEntry_t* entries, u8 len) {
 	Variable_t newVar = {.readOnly = 1, .variableType = FunctionClass};
-	addPendingReference(var); // So caller doesn't fall out of scope. Don't forget to free!
 	newVar.function.origin = var;
 	newVar.function.builtIn = 1;
 	for (u32 i = 0; i < len; i++) {
@@ -88,6 +132,7 @@ Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFun
 			for (; j < len && !strcmp(entries[j].name, memberName); j++);
 			newVar.function.len = j - i;
 
+			addPendingReference(var); // So caller doesn't fall out of scope. Don't forget to free!
 			return copyVariableToPtr(newVar);
 		}
 	}

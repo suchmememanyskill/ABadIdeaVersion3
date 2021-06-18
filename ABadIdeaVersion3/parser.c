@@ -453,12 +453,24 @@ ParserRet_t parseScript(char* in) {
 							continue;
 						}
 						else {
-							gfx_printf("[FATAL] indexes cannot contain mutiple arguments");
+							// We're just assuming that it's a new array lol
+
+							op.token = EquationSeperator;
+							vecAdd(&lastFunc->operations, op);
+							op.token = Variable;
+
+
+							Variable_t a = createUnsolvedArrayVariable(astack, staticVariableHolder.data);
+							vecAdd(&staticVariableHolder, a);
+							CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+							op.variable = reference;
+
+							//gfx_printf("[FATAL] indexes cannot contain mutiple arguments");
 						}
 					}
 					else {
 						// TODO: optimize output to a typed array, if possible
-						Variable_t a = createUnsolvedArrayVariable(astack);
+						Variable_t a = createUnsolvedArrayVariable(astack, staticVariableHolder.data);
 						vecAdd(&staticVariableHolder, a);
 						CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 						op.variable = reference;
