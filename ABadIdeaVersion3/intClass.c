@@ -16,8 +16,9 @@ IntClass_t createIntClass(s64 in) {
 	return a;
 }
 
-Variable_t newIntVariable(s64 x, u8 readOnly) {
-	Variable_t var = { .variableType = IntClass, .readOnly = readOnly, .integer = createIntClass(x) };
+Variable_t newIntVariable(s64 x) {
+	// Integers are always read-only
+	Variable_t var = { .variableType = IntClass, .readOnly = 1, .integer = createIntClass(x) };
 	return var;
 }
 

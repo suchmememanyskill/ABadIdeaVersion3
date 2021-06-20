@@ -7,6 +7,7 @@
 #include "garbageCollector.h"
 #include "StringClass.h"
 #include "arrayClass.h"
+#include "arrayReferenceClass.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
@@ -21,6 +22,7 @@ MemberGetters_t memberGetters[] = {
 	{IntArrayClass, getArrayMember},
 	{StringArrayClass, getArrayMember},
 	{ByteArrayClass, getArrayMember},
+	{SolvedArrayReferenceClass, getArrayReferenceMember},
 };
 
 
@@ -144,6 +146,9 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
 		if (var->variableType == memberGetters[i].classType) {
 			Variable_t* funcRef = memberGetters[i].func(var, memberName);
+			if (funcRef == NULL)
+				return;
+
 			Variable_t* callRes = genericCallDirect(funcRef, other, 1);
 			removePendingReference(funcRef);
 			return callRes;
@@ -155,7 +160,25 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 
 void freeVariable(Variable_t** target) {
 	// Add specific freeing logic here
+	Variable_t* referencedTarget = *target;
+	
+	if (!referencedTarget->reference) {
+		switch (referencedTarget->variableType) {
+			case StringClass:
+			if (referencedTarget->string.free)
+				FREE(referencedTarget->string.value);
+			break;
+			case StringArrayClass:
+				vecForEach(char**, stringsInArray, (&referencedTarget->solvedArray.vector))
+					FREE(*stringsInArray);
+			case ByteArrayClass:
+			case IntArrayClass:
+				vecFree(referencedTarget->solvedArray.vector);
+				break;
+		}
+	}
+	
 
-	FREE(*target);
+	FREE(referencedTarget);
 	*target = NULL;
 }

@@ -3,6 +3,8 @@
 #include "genericClass.h"
 #include "eval.h"
 #include "garbageCollector.h"
+#include "vector.h"
+#include <string.h>
 
 Variable_t* staticVars;
 
@@ -10,7 +12,35 @@ void setStaticVars(Vector_t* vec) {
 	staticVars = vec->data;
 }
 
-Variable_t* opToVar(Operator_t* op) {
+Vector_t runtimeVars;
+
+void initRuntimeVars() {
+	runtimeVars = newVec(sizeof(Dict_t), 8);
+}
+
+void exitRuntimeVars() {
+	
+	vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
+		removePendingReference(variableArrayEntry->var);
+	}
+
+	processPendingReferences();
+
+	vecFree(runtimeVars);	
+}
+
+typedef struct {
+	struct {
+		u8 isTopLevel : 1;
+		u8 hasBeenNoticed : 1;
+		u8 hasVarName : 1;
+	};
+	Variable_t* setVar;
+	char* varName;
+	Function_t* idxVar;
+} Callback_SetVar_t;
+
+Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 	Variable_t* var = NULL;
 	CallArgs_t* args = NULL;
 
@@ -33,7 +63,24 @@ Variable_t* opToVar(Operator_t* op) {
 			var->gcDoNotFree = 1;
 		}
 		else {
-			// Stubbed
+			if (args != NULL) {
+				if (args->action == ActionSet) {
+					setCallback->isTopLevel = 1;
+					setCallback->varName = op->variable.name;
+					setCallback->hasVarName = 1;
+					return NULL;
+				}
+			}
+
+			vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
+				if (!strcmp(variableArrayEntry->name, op->variable.name)) {
+					var = variableArrayEntry->var;
+					break;
+				}
+			}
+
+			if (var == NULL)
+				return NULL;
 		}
 	}
 
@@ -43,7 +90,20 @@ Variable_t* opToVar(Operator_t* op) {
 			varNext = genericGet(var, args);
 		}
 		else if (args->action == ActionSet) {
-			gfx_printf("[FATAL] Unexpected set!");
+			if (args->extraAction == ActionExtraMemberName || args->extraAction == ActionExtraArrayIndex) {
+				setCallback->hasVarName = (args->extraAction == ActionExtraMemberName) ? 1 : 0;
+				setCallback->setVar = var;
+				if (args->extraAction == ActionExtraMemberName) {
+					setCallback->varName = args->extra;
+				}
+				else {
+					setCallback->idxVar = args->extra;
+				}
+			}
+			else {
+				gfx_printf("[FATAL] Unexpected set!");
+			}
+			return NULL;
 		}
 		else if (args->action == ActionCall) {
 			varNext = genericCall(var, args);
@@ -65,10 +125,30 @@ Variable_t* opToVar(Operator_t* op) {
 	return var;
 }
 
+void runtimeVariableEdit(Callback_SetVar_t* set, Variable_t* curRes) {
+	if (set->isTopLevel) {
+		vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
+			if (!strcmp(variableArrayEntry->name, set->varName)) {
+				removePendingReference(variableArrayEntry->var);
+				variableArrayEntry->var = curRes;
+				return;
+			}
+		}
+
+		Dict_t newStoredVariable = { 0 };
+		newStoredVariable.name = CpyStr(set->varName);
+		newStoredVariable.var = curRes;
+		vecAdd(&runtimeVars, newStoredVariable);
+		return;
+	}
+
+	// TODO: add non-top level sets
+}
+
 Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
-	Variable_t* set = NULL;
 	Variable_t* curRes = NULL;
 	Operator_t* curOp = NULL;
+	Callback_SetVar_t set = { 0 };
 	for (u32 i = 0; i < len; i++) {
 		Operator_t* cur = &ops[i];
 
@@ -76,8 +156,12 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 			continue;
 
 		if (cur->token == EquationSeperator) {
-			removePendingReference(curRes);
+			if (set.hasBeenNoticed == 1) 
+				runtimeVariableEdit(&set, curRes);
+			else
+				removePendingReference(curRes);
 
+			memset(&set, 0, sizeof(Callback_SetVar_t));
 			curRes = NULL;
 			curOp = NULL;
 			continue;
@@ -87,8 +171,12 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 			if (cur->token != Variable && cur->token != BetweenBrackets)
 				gfx_printf("[FATAL] First token is not a variable");
 			else {
-				curRes = opToVar(cur);
+				curRes = opToVar(cur, &set);
 				if (!curRes) {
+					if ((set.varName != NULL || set.idxVar != NULL) && set.hasBeenNoticed == 0) {
+						set.hasBeenNoticed = 1;
+						continue;
+					}
 					gfx_printf("[FATAL] Invalid variable operator");
 				}
 			}
@@ -105,7 +193,7 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 			continue;
 		}
 
-		Variable_t* rightSide = opToVar(cur);
+		Variable_t* rightSide = opToVar(cur, &set);
 		if (!rightSide) {
 			gfx_printf("[FATAL] Invalid variable operator");
 		}
@@ -120,9 +208,13 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 		curRes = result;
 	}
 
-	if (!ret) {
+	if (set.hasBeenNoticed == 1) {
+		runtimeVariableEdit(&set, curRes);
+		return &emptyClass;
+	}
+	else if (!ret) {
 		removePendingReference(curRes);
-		return NULL;
+		return &emptyClass;
 	}
 
 	return curRes;

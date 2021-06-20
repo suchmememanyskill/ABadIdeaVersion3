@@ -347,6 +347,7 @@ ParserRet_t parseScript(char* in) {
 						
 						CallArgs_t* lastCall = getLastRef(&lastOp->callArgs);
 						if (lastCall->extraAction == ActionExtraCallArgs) {
+							// TODO: change this to add to funcArgs as a funcClass
 							Function_t* funcArgs = lastCall->extra;
 							Function_t* newFuncArgs = malloc(sizeof(Function_t) * 2);
 							newFuncArgs[0] = *funcArgs;

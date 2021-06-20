@@ -25,6 +25,7 @@ typedef enum {
 	UnresolvedArrayClass,
 	DictionaryClass,
 	EmptyClass,
+	SolvedArrayReferenceClass,
 } VariableType_t;
 
 typedef enum {
@@ -114,7 +115,15 @@ typedef enum {
 } ArrayType_t;
 
 typedef struct {
-	Vector_t vector; // vector of typeof(value)
+	union {
+		Vector_t vector; // vector of typeof(value)
+		struct {
+			struct _Variable_t* arrayClassReference;
+			u32 offset;
+			u32 len;
+		};
+	};
+	
 } ArrayClass_t;
 
 typedef struct _UnsolvedArrayClass_t {
@@ -172,12 +181,12 @@ typedef struct {
 } Array_t;
 
 typedef struct _VariableReference_t {
+	struct {
+		u8 staticVariableSet : 1;
+		u8 staticVariableRef : 1;
+	};
 	union {
-		struct {
-			Variable_t* staticVariable;
-			u8 staticVariableSet : 1;
-			u8 staticVariableRef : 1;
-		};
+		Variable_t* staticVariable;
 		char* name;
 		Array_t betweenBrackets;
 	};

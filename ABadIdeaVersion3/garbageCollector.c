@@ -34,6 +34,10 @@ void removePendingReference(Variable_t* ref) {
 		if (ref->variableType == FunctionClass && ref->function.builtIn) {
 			removePendingReference(ref->function.origin);
 		}
+
+		if (ref->variableType == SolvedArrayReferenceClass) {
+			removePendingReference(ref->solvedArray.arrayClassReference);
+		}
 		vecAdd(&pendingRemove, ref);
 	}
 		
