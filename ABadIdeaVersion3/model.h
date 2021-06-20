@@ -157,10 +157,9 @@ typedef struct _Variable_t {
 	};
 	union {
 		struct {
-			u8 variableType : 4;
+			u8 variableType : 5;
 			u8 readOnly : 1;
 			u8 reference : 1;
-			u8 freeAtEnd : 1;
 			u8 gcDoNotFree : 1;
 		};
 	};
@@ -215,7 +214,7 @@ typedef struct {
 
 typedef struct {
 	struct {
-		Token_t token : 7;
+		u8 token : 7;
 		u8 not : 1;
 	};
 	union {
