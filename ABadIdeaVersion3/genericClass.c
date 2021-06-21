@@ -8,6 +8,7 @@
 #include "StringClass.h"
 #include "arrayClass.h"
 #include "arrayReferenceClass.h"
+#include "functionClass.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
@@ -53,7 +54,7 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 
 	if (var->function.builtIn) {
 		for (u32 i = 0; i < var->function.len; i++) {
-			if (var->function.builtInPtr[i].argCount == len) {
+			if (var->function.builtInPtr[i].argCount == len || var->function.builtInPtr[i].argCount == VARARGCOUNT) {
 				int valid = 1;
 				if (var->function.builtInPtr[i].argCount != VARARGCOUNT) {
 					for (u32 j = 0; j < var->function.builtInPtr[i].argCount; j++) {
@@ -100,12 +101,22 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 					if (i + 1 == f->operations.count)
 						i++;
 
-					Variable_t* var = eval(&ops[lasti], i - lasti, 1);
-					if (var == NULL)
-						return NULL; // maybe free first?
+					if (var->function.firstArgAsFunction && argsHolder.count == 0) {
+						Function_t f = { .operations = vecFromArray(&ops[lasti], i - lasti, sizeof(Operator_t)) };
+						Variable_t var = newFunctionVariable(createFunctionClass(f, NULL));
+						var.reference = 1;
+						Variable_t* varPtr = copyVariableToPtr(var);
+						vecAdd(&argsHolder, varPtr);
+					}
+					else {
+						Variable_t* var = eval(&ops[lasti], i - lasti, 1);
+						if (var == NULL)
+							return NULL; // maybe free first?
+
+						vecAdd(&argsHolder, var);
+					}
 
 					lasti = i;
-					vecAdd(&argsHolder, var);
 				}
 			}
 
@@ -150,7 +161,7 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 			if (funcRef == NULL)
 				return;
 
-			Variable_t* callRes = genericCallDirect(funcRef, other, 1);
+			Variable_t* callRes = genericCallDirect(funcRef, other, (other == NULL) ? 0 : 1);
 			removePendingReference(funcRef);
 			return callRes;
 		}

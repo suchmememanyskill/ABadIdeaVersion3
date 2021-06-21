@@ -2,6 +2,7 @@
 #include "vector.h"
 #include "genericClass.h"
 #include "compat.h"
+#include "garbageCollector.h"
 
 typedef struct {
 	Variable_t* ref;
@@ -19,15 +20,19 @@ void initGarbageCollector() {
 }
 
 void addPendingReference(Variable_t* ref) {
-	if (ref == NULL)
+	if (ref == NULL || ref->gcDoNotFree)
 		return;
 
-	if (!ref->gcDoNotFree)
-		vecAdd(&pendingAdd, ref);
+	vecAdd(&pendingAdd, ref);
+
+	// TODO: freeing issues when trying a = 0 while(1) { a.print() 1.print() a = a + 1 } 
+
+	if (pendingAdd.count >= 16)
+		processPendingReferences();
 }
 
 void removePendingReference(Variable_t* ref) {
-	if (ref == NULL)
+	if (ref == NULL || ref->gcDoNotFree)
 		return;
 
 	if (!ref->gcDoNotFree) {
@@ -40,7 +45,6 @@ void removePendingReference(Variable_t* ref) {
 		}
 		vecAdd(&pendingRemove, ref);
 	}
-		
 }
 
 void modReference(Variable_t* ref, u8 add) {
@@ -70,8 +74,12 @@ void processPendingReferences() {
 	vecForEach(Variable_t**, references, (&pendingAdd))
 		modReference(*references, 1);
 
+	pendingAdd.count = 0;
+
 	vecForEach(Variable_t**, references, (&pendingRemove))
 		modReference(*references, 0);
+
+	pendingRemove.count = 0;
 }
 
 void exitGarbageCollector() {

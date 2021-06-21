@@ -94,7 +94,9 @@ typedef struct _FunctionClass_t {
 	union {
 		struct {
 			u8 builtIn : 1;
+			u8 firstArgAsFunction : 1;
 		};
+		u8 unionFunctionOptions;
 	};
 	union {
 		Function_t function;

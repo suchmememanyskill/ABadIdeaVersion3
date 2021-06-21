@@ -182,6 +182,10 @@ u8 nextToken(char** inPtr, void** val) {
 			ret = Token_String;
 			*val = storage;
 		}
+		else if (*in == '\0') {
+			*inPtr = in;
+			return ret;
+		}
 		else {
 			for (u32 i = 0; i < tokenConvertionCount; i++) {
 				TokenConvertion_t t = tokenConvertions[i];
@@ -269,6 +273,9 @@ ParserRet_t parseScript(char* in) {
 
 		void* var = NULL;
 		u8 tokenType = nextToken(&in, &var);
+
+		if (tokenType == Token_Err)
+			break;
 
 		Operator_t op = { .token = Variable };
 

@@ -56,15 +56,14 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 			if (op->variable.staticVariableRef) {
 				op->variable.staticVariable = &staticVars[(int)op->variable.staticVariable];
 				op->variable.staticVariableRef = 0;
+				op->variable.staticVariable->readOnly = 1;
+				op->variable.staticVariable->reference = 1;
+				op->variable.staticVariable->gcDoNotFree = 1;
 			}
 
 			var = op->variable.staticVariable;
-			var->readOnly = 1;
-			var->reference = 1;
-			var->gcDoNotFree = 1;
 		}
 		else {
-
 			var = searchStdLib(op->variable.name);
 
 			if (var == NULL) {
@@ -136,6 +135,7 @@ void runtimeVariableEdit(Callback_SetVar_t* set, Variable_t* curRes) {
 		vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
 			if (!strcmp(variableArrayEntry->name, set->varName)) {
 				removePendingReference(variableArrayEntry->var);
+				addPendingReference(curRes);
 				variableArrayEntry->var = curRes;
 				return;
 			}
@@ -204,8 +204,15 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 			gfx_printf("[FATAL] Invalid variable operator");
 		}
 
+		if (curRes->variableType > 12)
+			gfx_printf("Invalid curRes!");
+
+		// Issue lies here for freeing issues, curRes is corrupted
 		Variable_t* result = callMemberFunctionDirect(curRes, curOp->tokenStr, &rightSide);
 		// Free old values
+
+		if (result == NULL)
+			gfx_printf("wtf");
 
 		removePendingReference(curRes);
 		removePendingReference(rightSide);
