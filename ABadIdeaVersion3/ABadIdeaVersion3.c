@@ -6,6 +6,22 @@
 #include "eval.h"
 #include "garbageCollector.h"
 
+char* readFile(char* path) {
+    FILE* fp = fopen(path, "r");
+    if (fp == NULL)
+        return NULL;
+
+    fseek(fp, 0L, SEEK_END);
+    size_t size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    char* ret = calloc(size + 1, 1);
+    fread(ret, size, 1, fp);
+
+    fclose(fp);
+    return ret;
+}
+
 int main()
 {
     //gfx_printf("Hello world!\n");
@@ -39,9 +55,14 @@ int main()
     
     initGarbageCollector();
 
+    char* script = readFile("input.te");
+    if (script == NULL)
+        return;
+
     //parseScript("#REQUIRE VER 3.0.5\nmain = { two = 1 + 1 }");
     //ParserRet_t ret = parseScript("a.b.c(1){ a.b.c() }");
-    ParserRet_t ret = parseScript("[1,2,3,4,5].foreach(\"iter\") { iter.print() }");
+    ParserRet_t ret = parseScript(script);
+    free(script);
 
     setStaticVars(&ret.staticVarHolder);
     initRuntimeVars();

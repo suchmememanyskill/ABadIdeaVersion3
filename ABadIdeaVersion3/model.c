@@ -4,17 +4,17 @@
 #include "intClass.h"
 
 TokenConvertion_t tokenConvertions[] = {
-	{Not, "!"},
-
 	{SmallerEqual, "<="},
 	{BiggerEqual, "=>"},
 	{NotEqual, "!="},
 	{LogicAnd, "&&"},
 	{LogicOr, "||"},
+	{EqualEqual, "=="},
 
 	{BitShiftLeft, "<<"},
 	{BitShiftRight, ">>"},
 
+	{Not, "!"},
 	{Plus, "+"},
 	{Equals, "="},
 	{Minus, "-"},
