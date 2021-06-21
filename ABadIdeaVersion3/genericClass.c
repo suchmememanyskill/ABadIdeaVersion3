@@ -39,8 +39,11 @@ Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 		Function_t* idx = ref->extra;
 		Variable_t *solvedIdx = eval(idx->operations.data, idx->operations.count, 1);
 		removePendingReference(solvedIdx);
-		if (solvedIdx->variableType != IntClass)
+		if (solvedIdx->variableType != IntClass) {
+			gfx_printf("[FATAL] index is not an integer");
 			return NULL;
+		}
+			
 
 		return callMemberFunctionDirect(var, "get", &solvedIdx);
 	}

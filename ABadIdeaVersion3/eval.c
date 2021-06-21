@@ -30,17 +30,6 @@ void exitRuntimeVars() {
 	vecFree(runtimeVars);	
 }
 
-typedef struct {
-	struct {
-		u8 isTopLevel : 1;
-		u8 hasBeenNoticed : 1;
-		u8 hasVarName : 1;
-	};
-	Variable_t* setVar;
-	char* varName;
-	Function_t* idxVar;
-} Callback_SetVar_t;
-
 Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 	Variable_t* var = NULL;
 	CallArgs_t* args = NULL;
@@ -86,6 +75,8 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 
 			if (var == NULL)
 				return NULL;
+
+			addPendingReference(var);
 		}
 	}
 
@@ -135,7 +126,7 @@ void runtimeVariableEdit(Callback_SetVar_t* set, Variable_t* curRes) {
 		vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
 			if (!strcmp(variableArrayEntry->name, set->varName)) {
 				removePendingReference(variableArrayEntry->var);
-				addPendingReference(curRes);
+				//addPendingReference(curRes);
 				variableArrayEntry->var = curRes;
 				return;
 			}
