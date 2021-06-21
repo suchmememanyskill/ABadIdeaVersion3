@@ -285,7 +285,7 @@ ParserRet_t parseScript(char* in) {
 			op.variable = reference;
 		}
 		else if (tokenType == Token_Int) {
-			Variable_t a = newIntVariable(*((s64*)var), 1);
+			Variable_t a = newIntVariable(*((s64*)var));
 			a.gcDoNotFree = 1;
 			free(var);
 			vecAdd(&staticVariableHolder, a);
@@ -293,7 +293,7 @@ ParserRet_t parseScript(char* in) {
 			op.variable = reference;
 		}
 		else if (tokenType == Token_String) {
-			Variable_t a = newStringVariable(var, 1, 0);
+			Variable_t a = newStringVariable(var, 1, 1);
 			a.gcDoNotFree = 1;
 			vecAdd(&staticVariableHolder, a);
 			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
@@ -347,14 +347,17 @@ ParserRet_t parseScript(char* in) {
 						
 						CallArgs_t* lastCall = getLastRef(&lastOp->callArgs);
 						if (lastCall->extraAction == ActionExtraCallArgs) {
-							// TODO: change this to add to funcArgs as a funcClass
 							Function_t* funcArgs = lastCall->extra;
-							Function_t* newFuncArgs = malloc(sizeof(Function_t) * 2);
-							newFuncArgs[0] = *funcArgs;
-							newFuncArgs[1] = *popFunc;
-							free(funcArgs);
-							lastCall->extra = newFuncArgs;
-							lastCall->extraAction = ActionExtraCallArgsFunction;
+
+							op.token = EquationSeperator;
+							vecAdd(&funcArgs->operations, op);
+							op.token = Variable;
+
+							Variable_t a = newFunctionVariable(createFunctionClass(*popFunc, NULL));
+							vecAdd(&staticVariableHolder, a);
+							CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+							op.variable = reference;
+							vecAdd(&funcArgs->operations, op);
 							continue;
 						}
 					}

@@ -55,9 +55,9 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 		for (u32 i = 0; i < var->function.len; i++) {
 			if (var->function.builtInPtr[i].argCount == len) {
 				int valid = 1;
-				if (var->function.len != 0) {
+				if (var->function.builtInPtr[i].argCount != VARARGCOUNT) {
 					for (u32 j = 0; j < var->function.builtInPtr[i].argCount; j++) {
-						if (var->function.builtInPtr[i].argTypes[j] != args[j]->variableType) {
+						if (var->function.builtInPtr[i].argTypes[j] != args[j]->variableType || var->function.builtInPtr[i].argTypes[j] == VARARGCOUNT) {
 							valid = 0;
 							break;
 						}
@@ -71,7 +71,8 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 		}
 	}
 	else {
-		// Stubbed
+		eval(var->function.function.operations.data, var->function.function.operations.count, 0);
+		return &emptyClass;
 	}
 
 	return NULL;
@@ -95,7 +96,7 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 
 			// Loops trough the function to get all args out
 			for (int i = 0; i < f->operations.count; i++) {
-				if (ops[i].token == BetweenBrackets || i + 1 == f->operations.count) {
+				if (ops[i].token == EquationSeperator || i + 1 == f->operations.count) {
 					if (i + 1 == f->operations.count)
 						i++;
 

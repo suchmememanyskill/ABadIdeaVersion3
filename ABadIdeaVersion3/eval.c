@@ -4,6 +4,7 @@
 #include "eval.h"
 #include "garbageCollector.h"
 #include "vector.h"
+#include "standardLibrary.h"
 #include <string.h>
 
 Variable_t* staticVars;
@@ -63,19 +64,24 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 			var->gcDoNotFree = 1;
 		}
 		else {
-			if (args != NULL) {
-				if (args->action == ActionSet) {
-					setCallback->isTopLevel = 1;
-					setCallback->varName = op->variable.name;
-					setCallback->hasVarName = 1;
-					return NULL;
-				}
-			}
 
-			vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
-				if (!strcmp(variableArrayEntry->name, op->variable.name)) {
-					var = variableArrayEntry->var;
-					break;
+			var = searchStdLib(op->variable.name);
+
+			if (var == NULL) {
+				if (args != NULL) {
+					if (args->action == ActionSet) {
+						setCallback->isTopLevel = 1;
+						setCallback->varName = op->variable.name;
+						setCallback->hasVarName = 1;
+						return NULL;
+					}
+				}
+
+				vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
+					if (!strcmp(variableArrayEntry->name, op->variable.name)) {
+						var = variableArrayEntry->var;
+						break;
+					}
 				}
 			}
 

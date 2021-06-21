@@ -75,6 +75,9 @@
     <ClCompile Include="arrayReferenceClass.c">
       <Filter>Source Files\Classes\Array</Filter>
     </ClCompile>
+    <ClCompile Include="standardLibrary.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="compat.h">
@@ -118,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="arrayReferenceClass.h">
       <Filter>Source Files\Classes\Array</Filter>
+    </ClInclude>
+    <ClInclude Include="standardLibrary.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -41,7 +41,7 @@ int main()
 
     //parseScript("#REQUIRE VER 3.0.5\nmain = { two = 1 + 1 }");
     //ParserRet_t ret = parseScript("a.b.c(1){ a.b.c() }");
-    ParserRet_t ret = parseScript("a = 1 + 1 b = a.print a = 3 b()");
+    ParserRet_t ret = parseScript("if (1, 1.print)");
 
     setStaticVars(&ret.staticVarHolder);
     initRuntimeVars();

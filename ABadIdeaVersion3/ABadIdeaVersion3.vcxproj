@@ -149,6 +149,7 @@
     <ClCompile Include="intClass.c" />
     <ClCompile Include="model.c" />
     <ClCompile Include="parser.c" />
+    <ClCompile Include="standardLibrary.c" />
     <ClCompile Include="StringClass.c" />
     <ClCompile Include="unsolvedArrayClass.c" />
     <ClCompile Include="vector.c" />
@@ -165,6 +166,7 @@
     <ClInclude Include="intClass.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="parser.h" />
+    <ClInclude Include="standardLibrary.h" />
     <ClInclude Include="StringClass.h" />
     <ClInclude Include="unsolvedArrayClass.h" />
     <ClInclude Include="vector.h" />
