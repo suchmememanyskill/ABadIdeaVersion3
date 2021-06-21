@@ -79,6 +79,7 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 		return &emptyClass;
 	}
 
+	gfx_printf("[FATAL] Arguments do not match function defenition");
 	return NULL;
 }
 
@@ -156,6 +157,7 @@ Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFun
 		}
 	}
 
+	gfx_printf("[FATAL] Did not find member with specified name");
 	return NULL;
 }
 

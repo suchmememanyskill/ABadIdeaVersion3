@@ -25,7 +25,7 @@ Variable_t newIntVariable(s64 x) {
 ClassFunction(printIntVariable) {
 	if (caller->variableType == IntClass) {
 		IntClass_t* a = &caller->integer;
-		gfx_printf("%d", a->value);
+		gfx_printf("%lld", a->value);
 	}
 	return &emptyClass;
 }
@@ -37,12 +37,28 @@ ClassFunction(addIntVariables) {
 	return newIntVariablePtr((i1 + i2), 0);
 }
 
+ClassFunction(minusIntVariables) {
+	s64 i1 = getIntValue(caller);
+	s64 i2 = getIntValue(*args);
+
+	return newIntVariablePtr((i1 - i2), 0);
+}
+
+ClassFunction(multiplyIntVariables) {
+	s64 i1 = getIntValue(caller);
+	s64 i2 = getIntValue(*args);
+
+	return newIntVariablePtr((i1 * i2), 0);
+}
+
 u8 oneVarArg[] = { VARARGCOUNT };
 u8 oneIntArg[] = { IntClass };
 
 ClassFunctionTableEntry_t intFunctions[] = {
 	{"print", printIntVariable, 0, 0},
 	{"+", addIntVariables, 1, oneIntArg },
+	{"-", minusIntVariables, 1, oneIntArg },
+	{"*", multiplyIntVariables, 1, oneIntArg },
 };
 
 Variable_t* getIntegerMember(Variable_t* var, char* memberName) {

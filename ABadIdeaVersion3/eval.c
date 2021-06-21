@@ -195,19 +195,14 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 			gfx_printf("[FATAL] Invalid variable operator");
 		}
 
-		if (curRes->variableType > 12)
-			gfx_printf("Invalid curRes!");
-
 		// Issue lies here for freeing issues, curRes is corrupted
 		Variable_t* result = callMemberFunctionDirect(curRes, curOp->tokenStr, &rightSide);
 		// Free old values
 
-		if (result == NULL)
-			gfx_printf("wtf");
-
 		removePendingReference(curRes);
 		removePendingReference(rightSide);
 		rightSide = NULL;
+		curOp = NULL;
 
 		curRes = result;
 	}

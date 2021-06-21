@@ -223,6 +223,7 @@ typedef struct {
 		VariableReference_t variable;
 		CallArgs_t callArgs;
 		char* tokenStr;
+		s64 lineNumber;
 	};
 	// probably should add u16 lineNum here
 } Operator_t;

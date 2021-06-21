@@ -51,6 +51,7 @@ char* utils_copyStringSize(const char* in, int size) {
 #define ELIFC(c) else if (*in == c)
 
 Vector_t script;
+s64 lineNumber;
 
 enum TokenType {
 	Token_Variable = 0,
@@ -186,6 +187,9 @@ u8 nextToken(char** inPtr, void** val) {
 			*inPtr = in;
 			return ret;
 		}
+		else if (*in == '\n'){
+			lineNumber++;
+		}
 		else {
 			for (u32 i = 0; i < tokenConvertionCount; i++) {
 				TokenConvertion_t t = tokenConvertions[i];
@@ -260,6 +264,7 @@ ParserRet_t parseScript(char* in) {
 	StackHistory_t firstHistory = History_Function;
 	vecAdd(&stackHistoryHolder, firstHistory);
 	u8 notNext = 0;
+	lineNumber = 1;
 
 	while (*in) {
 		Function_t* lastFunc = getStackEntry(&functionStack);
@@ -282,6 +287,7 @@ ParserRet_t parseScript(char* in) {
 		if (tokenType >= Token_Variable && tokenType <= Token_Int && lastOp) {
 			if (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp))) {
 				op.token = EquationSeperator;
+				op.lineNumber = lineNumber;
 				vecAdd(&lastFunc->operations, op);
 				op.token = Variable;
 			}
