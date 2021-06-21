@@ -122,8 +122,10 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 
 			Variable_t *res = genericCallDirect(var, argsHolder.data, argsHolder.count);
 
-			vecForEach(Variable_t*, tofree, (&argsHolder))
-				removePendingReference(tofree);
+			vecForEach(Variable_t**, tofree, (&argsHolder))
+				removePendingReference(*tofree);
+
+			vecFree(argsHolder);
 
 			return res;
 		}

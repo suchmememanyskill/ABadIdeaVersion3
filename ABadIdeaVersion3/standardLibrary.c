@@ -49,13 +49,14 @@ ClassFunction(stdWhile) {
 	return &emptyClass;
 }
 
-// Print has some weird memory charactirsitics?? Needs more investigating
 ClassFunction(stdPrint) {
+	
 	for (int i = 0; i < argsLen; i++) {
 		Variable_t* res = callMemberFunctionDirect(args[i], "print", NULL);
 		if (res == NULL)
 			return NULL;
 	}
+	
 
 	return &emptyClass;
 }
