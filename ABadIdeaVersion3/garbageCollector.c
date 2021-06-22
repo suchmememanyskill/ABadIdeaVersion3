@@ -19,36 +19,19 @@ void initGarbageCollector() {
 	storedReferences = newVec(sizeof(ReferenceCounter_t), 8);
 }
 
-void addPendingReference(Variable_t* ref) {
-	if (ref == NULL || ref->gcDoNotFree)
-		return;
-
-	vecAdd(&pendingAdd, ref);
-
-	// TODO: freeing issues when trying a = 0 while(1) { a.print() 1.print() a = a + 1 } 
-
-	if (pendingAdd.count >= 16)
-		processPendingReferences();
-}
-
-void removePendingReference(Variable_t* ref) {
-	if (ref == NULL || ref->gcDoNotFree)
-		return;
-
-	if (!ref->gcDoNotFree) {
-		if (ref->variableType == FunctionClass && ref->function.builtIn) {
-			removePendingReference(ref->function.origin);
-		}
-
-		if (ref->variableType == SolvedArrayReferenceClass) {
-			removePendingReference(ref->solvedArray.arrayClassReference);
-		}
-		vecAdd(&pendingRemove, ref);
-	}
-}
+// TODO: create binary tree for this!
 
 void modReference(Variable_t* ref, u8 add) {
+	if (ref == NULL || ref->gcDoNotFree)
+		return;
+
 	vecForEach(ReferenceCounter_t*, references, (&storedReferences)) {
+		if (!add && ((ref->variableType == FunctionClass && ref->function.builtIn && references->ref == ref->function.origin) || (ref->variableType == SolvedArrayReferenceClass && references->ref == ref->solvedArray.arrayClassReference)))
+			if (--references->refCount <= 0) {
+				freeVariable(&references->ref);
+				vecRem(&storedReferences, ((u8*)references - (u8*)storedReferences.data) / storedReferences.elemSz);
+			}
+
 		if (references->ref == ref) {
 			if (add)
 				references->refCount++;
@@ -69,6 +52,40 @@ void modReference(Variable_t* ref, u8 add) {
 	ReferenceCounter_t r = { .ref = ref, .refCount = 1 };
 	vecAdd(&storedReferences, r);
 }
+/*
+void addPendingReference(Variable_t* ref) {
+	if (ref == NULL || ref->gcDoNotFree)
+		return;
+
+	//vecAdd(&pendingAdd, ref);
+
+	modReference(ref, 1);
+
+	// TODO: freeing issues when trying a = 0 while(1) { a.print() 1.print() a = a + 1 } 
+
+	//if (pendingAdd.count >= 16)
+	//	processPendingReferences();
+}
+
+void removePendingReference(Variable_t* ref) {
+	if (ref == NULL || ref->gcDoNotFree)
+		return;
+
+	if (!ref->gcDoNotFree) {
+		if (ref->variableType == FunctionClass && ref->function.builtIn) {
+			removePendingReference(ref->function.origin);
+		}
+
+		if (ref->variableType == SolvedArrayReferenceClass) {
+			removePendingReference(ref->solvedArray.arrayClassReference);
+		}
+
+		modReference(ref, 0);
+
+		//vecAdd(&pendingRemove, ref);
+	}
+}
+*/
 
 void processPendingReferences() {
 	vecForEach(Variable_t**, references, (&pendingAdd))
