@@ -4,6 +4,7 @@
 	#include <stdio.h>
 	#include <malloc.h>
 	#define gfx_printf(str, ...) printf(str, __VA_ARGS__)
+	#define gfx_vprintf(str, va) vprintf(str, va);
 	#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 	#define LPVERSION_MAJOR 3
 	#define LPVERSION_MINOR 0

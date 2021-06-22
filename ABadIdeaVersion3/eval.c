@@ -5,6 +5,7 @@
 #include "garbageCollector.h"
 #include "vector.h"
 #include "standardLibrary.h"
+#include "scriptError.h"
 #include <string.h>
 
 Variable_t* staticVars;
@@ -73,8 +74,9 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 				}
 			}
 
-			if (var == NULL)
-				return NULL;
+			if (var == NULL) {
+				SCRIPT_FATAL_ERR("Variable not found");
+			}
 
 			addPendingReference(var);
 		}
@@ -93,7 +95,7 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 		}
 		else if (args->action == ActionSet) {
 			if (var->readOnly) {
-				gfx_printf("[FATAL] Variable which set was called on is read-only");
+				SCRIPT_FATAL_ERR("Variable which set was called on is read-only");
 				return NULL;
 			}
 
@@ -108,7 +110,7 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 				}
 			}
 			else {
-				gfx_printf("[FATAL] Unexpected set!");
+				SCRIPT_FATAL_ERR("[FATAL] Unexpected set!");
 			}
 			return NULL;
 		}
@@ -176,6 +178,7 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 			continue;
 
 		if (cur->token == EquationSeperator) {
+			scriptCurrentLine = cur->lineNumber;
 			if (set.hasBeenNoticed == 1) 
 				runtimeVariableEdit(&set, curRes);
 			else
@@ -188,8 +191,9 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 		}
 
 		if (curRes == NULL) {
-			if (cur->token != Variable && cur->token != BetweenBrackets)
-				gfx_printf("[FATAL] First token is not a variable");
+			if (cur->token != Variable && cur->token != BetweenBrackets) {
+				SCRIPT_FATAL_ERR("First token is not a variable");
+			}
 			else {
 				curRes = opToVar(cur, &set);
 				if (!curRes) {
@@ -197,7 +201,7 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 						set.hasBeenNoticed = 1;
 						continue;
 					}
-					gfx_printf("[FATAL] Invalid variable operator");
+					return NULL;
 				}
 			}
 			continue;
@@ -208,15 +212,15 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 				curOp = cur;
 			}
 			else {
-				gfx_printf("[FATAL] First operator is not an operator");
+				SCRIPT_FATAL_ERR("Expected operator");
 			}
 			continue;
 		}
 
 		Variable_t* rightSide = opToVar(cur, &set);
-		if (!rightSide) {
-			gfx_printf("[FATAL] Invalid variable operator");
-		}
+		if (!rightSide) 
+			return NULL;
+		
 
 		// Issue lies here for freeing issues, curRes is corrupted
 		Variable_t* result = callMemberFunctionDirect(curRes, curOp->tokenStr, &rightSide, 1);

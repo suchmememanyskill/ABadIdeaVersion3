@@ -20,6 +20,13 @@ Variable_t* getStaticVariableFromOp(Operator_t* op, Variable_t *staticVars) {
 	return var;
 }
 
+Variable_t* solveArray(Variable_t *unsolvedArray) {
+	if (unsolvedArray->unsolvedArray.operations.count <= 0) {
+		//Variable_t 
+		// Return empty unsolved array that turns into a solved array once something is put into it
+	}
+}
+
 Variable_t createUnsolvedArrayVariable(Function_t* f, Variable_t* staticVars) {
 	Variable_t var = { 0 };
 	Vector_t holder = { 0 };

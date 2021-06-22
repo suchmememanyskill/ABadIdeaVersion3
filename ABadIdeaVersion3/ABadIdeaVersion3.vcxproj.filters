@@ -78,6 +78,9 @@
     <ClCompile Include="standardLibrary.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="scriptError.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="compat.h">
@@ -123,6 +126,9 @@
       <Filter>Source Files\Classes\Array</Filter>
     </ClInclude>
     <ClInclude Include="standardLibrary.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="scriptError.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

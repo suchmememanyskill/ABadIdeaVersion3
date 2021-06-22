@@ -5,6 +5,7 @@
 #include "arrayClass.h"
 #include "garbageCollector.h"
 #include "eval.h"
+#include "scriptError.h"
 
 u8 anotherOneIntArg[] = { IntClass };
 u8 oneStringoneFunction[] = { StringClass, FunctionClass };
@@ -14,8 +15,7 @@ ClassFunction(getArrayIdx) {
 	s64 getVal = (*args)->integer.value;
 	// Out of bounds
 	if (getVal < 0 || getVal >= caller->solvedArray.vector.count) {
-		gfx_printf("[FATAL] array index out of bounds");
-		return NULL;
+		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)getVal, (int)caller->solvedArray.vector.count);
 	}
 
 	if (caller->variableType == IntArrayClass) {
@@ -33,8 +33,7 @@ ClassFunction(getArrayLen) {
 ClassFunction(createRefSkip) {
 	s64 skipAmount = getIntValue(*args);
 	if (caller->solvedArray.vector.count < skipAmount || skipAmount <= 0) {
-		gfx_printf("[FATAL] skip index out of bounds");
-		return NULL;
+		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)skipAmount, (int)caller->solvedArray.vector.count);
 	}
 		
 	Variable_t refSkip = { .variableType = SolvedArrayReferenceClass };
@@ -80,8 +79,7 @@ ClassFunction(arraySet) {
 	s64 idx = getIntValue(*args);
 	Vector_t* v = &caller->solvedArray.vector;
 	if (v->count < idx || idx <= 0) {
-		gfx_printf("[FATAL] index out of bounds");
-		return NULL;
+		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)idx, (int)caller->solvedArray.vector.count);
 	}
 
 	if (caller->variableType == IntArrayClass) {

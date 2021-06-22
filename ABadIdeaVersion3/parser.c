@@ -10,6 +10,8 @@
 #include "unsolvedArrayClass.h"
 #include "functionClass.h"
 
+#include "scriptError.h"
+
 static inline int isValidWord(char c) {
 	char r = c | 0x20;
 	return ((r >= 'a' && r <= 'z') || c == '_');
@@ -59,6 +61,7 @@ enum TokenType {
 	Token_Int,
 	Token_Token,
 	Token_Err,
+	Token_Fatal_Err,
 };
 
 typedef enum {
@@ -95,13 +98,17 @@ u8 nextToken(char** inPtr, void** val) {
 						}
 					}
 
-					if (outdated)
-						gfx_printf("[FATAL] Script runner is outdated!");
+					if (outdated) {
+						printScriptError(SCRIPT_FATAL, "Script requires TegraExplorer %d.%d.%d or up!", vers[0], vers[1], vers[2]);
+						return Token_Fatal_Err;
+					}
 				}
 				else if (!memcmp(in + 9, "MINERVA", 7)) {
 					u8 minervaEnabled = 0; // TODO: Change this to the actual value
-					if (!minervaEnabled)
-						gfx_printf("[FATAL] extended memory required");
+					if (!minervaEnabled) {
+						printScriptError(SCRIPT_FATAL, "Extended memory required.\nPut the bootloader folder from hekate on your sd!");
+						return Token_Fatal_Err;
+					}
 				}
 			}
 
@@ -189,6 +196,7 @@ u8 nextToken(char** inPtr, void** val) {
 		}
 		else if (*in == '\n'){
 			lineNumber++;
+			scriptCurrentLine = lineNumber;
 		}
 		else {
 			for (u32 i = 0; i < tokenConvertionCount; i++) {
@@ -265,6 +273,7 @@ ParserRet_t parseScript(char* in) {
 	vecAdd(&stackHistoryHolder, firstHistory);
 	u8 notNext = 0;
 	lineNumber = 1;
+	scriptCurrentLine = 1;
 
 	while (*in) {
 		Function_t* lastFunc = getStackEntry(&functionStack);
@@ -281,6 +290,9 @@ ParserRet_t parseScript(char* in) {
 
 		if (tokenType == Token_Err)
 			break;
+
+		if (tokenType == Token_Fatal_Err)
+			return (ParserRet_t) { 0 };
 
 		Operator_t op = { .token = Variable };
 
@@ -318,7 +330,7 @@ ParserRet_t parseScript(char* in) {
 			if (token == Equals && lastOp) {
 				if (lastOp->token == Variable) {
 					if (lastOp->variable.staticVariableSet) {
-						gfx_printf("[FATAL] Trying to assign to a static variable");
+						SCRIPT_PARSER_ERR("Trying to assign to a static variable");
 					}
 					else {
 						setNextActionOperator(&lastFunc->operations, ActionSet, ActionExtraNone, NULL);
@@ -331,7 +343,7 @@ ParserRet_t parseScript(char* in) {
 					continue;
 				}
 				else {
-					gfx_printf("[FATAL] Trying to assign to non-object");
+					SCRIPT_PARSER_ERR("Trying to assign to non-object");
 				}
 			}
 			else if (token == LeftCurlyBracket) {
@@ -355,7 +367,7 @@ ParserRet_t parseScript(char* in) {
 
 					if (lastOp && (lastOp->token == Variable || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
 						if (lastOp->token == Variable) {
-							gfx_printf("[FATAL] GET variable before {}");
+							SCRIPT_PARSER_ERR("GET variable before {}");
 							continue;
 						}
 						
@@ -382,14 +394,14 @@ ParserRet_t parseScript(char* in) {
 					op.variable = reference;
 				}
 				else {
-					gfx_printf("[FATAL] stack count is 1 or state is not a function");
+					SCRIPT_PARSER_ERR("Stack count is 1 or state is not a function");
 				}
 			}
 			else if (token == Dot) {
 				if (lastOp && (lastOp->token == Variable || lastOp->token == BetweenBrackets || (lastOp->token == CallArgs && !isLastVarSet(lastOp)))) {
 					tokenType = nextToken(&in, &var);
 					if (tokenType != Token_Variable) {
-						gfx_printf("[FATAL] acessing member with non-dynamic token");
+						SCRIPT_PARSER_ERR("Acessing member with non-dynamic token");
 					}
 					else {
 						setNextActionOperator(&lastFunc->operations, ActionGet, ActionExtraMemberName, var);
@@ -397,7 +409,7 @@ ParserRet_t parseScript(char* in) {
 					}
 				}
 				else {
-					gfx_printf("[FATAL] member access on non-variable");
+					SCRIPT_PARSER_ERR("Member access on non-variable");
 				}
 			}
 			else if (token == LeftBracket) {
@@ -436,13 +448,13 @@ ParserRet_t parseScript(char* in) {
 							op.token = BetweenBrackets;
 						}
 						else {
-							gfx_printf("[FATAL] Priority brackets can only contian 1 argument");
+							SCRIPT_PARSER_ERR("Priority brackets can only contain 1 argument");
  						}
 
 					}
 				}
 				else {
-					gfx_printf("[FATAL] ) without (");
+					SCRIPT_PARSER_ERR(") without (");
 				}
 			}
 			else if (token == LeftSquareBracket) {
@@ -495,7 +507,7 @@ ParserRet_t parseScript(char* in) {
 					}
 				}
 				else {
-					gfx_printf("[FATAL] ] without [");
+					SCRIPT_PARSER_ERR("] without [");
 				}
 			}
 			else if (token == Not) {
@@ -522,13 +534,15 @@ ParserRet_t parseScript(char* in) {
 		vecAdd(&lastFunc->operations, op);
 	}
 
-	if (functionStack.count != 1 || stackHistoryHolder.count != 1)
-		gfx_printf("[FATAL] there seems to be an open bracket somewhere. EOF reached");
+	if (functionStack.count != 1 || stackHistoryHolder.count != 1) {
+		SCRIPT_PARSER_ERR("There seems to be an open bracket somewhere. EOF reached");
+	}
+		
 
-	ParserRet_t parse = { .main = (*(Function_t*)getStackEntry(&functionStack)), .staticVarHolder = staticVariableHolder };
+	ParserRet_t parse = { .main = (*(Function_t*)getStackEntry(&functionStack)), .staticVarHolder = staticVariableHolder, .valid = 1 };
 
 	vecFree(functionStack);
 	vecFree(stackHistoryHolder);
-
+	scriptCurrentLine = 1;
 	return parse;
 }

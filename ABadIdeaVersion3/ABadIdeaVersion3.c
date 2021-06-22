@@ -6,6 +6,12 @@
 #include "eval.h"
 #include "garbageCollector.h"
 
+// TODO: error handling
+// TODO: unsolved arrays
+// TODO: free-ing vars & script at end
+// TODO: implement functions from tsv2
+// TODO: add len to string
+
 char* readFile(char* path) {
     FILE* fp = fopen(path, "r");
     if (fp == NULL)
@@ -66,6 +72,7 @@ int main()
 
     setStaticVars(&ret.staticVarHolder);
     initRuntimeVars();
+    
     Variable_t* res = eval(ret.main.operations.data, ret.main.operations.count, 1);
 
     exitGarbageCollector();

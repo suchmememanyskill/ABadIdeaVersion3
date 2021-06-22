@@ -9,6 +9,7 @@
 #include "arrayClass.h"
 #include "arrayReferenceClass.h"
 #include "functionClass.h"
+#include "scriptError.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
@@ -40,13 +41,15 @@ Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 				return copyVariableToPtr(member);
 			}
 		}
+
+		SCRIPT_FATAL_ERR("Did not find member '%s'", ref->extra);
 	}
 	else if (ref->extraAction == ActionExtraArrayIndex) {
 		Function_t* idx = ref->extra;
 		Variable_t *solvedIdx = eval(idx->operations.data, idx->operations.count, 1);
 		
 		if (solvedIdx->variableType != IntClass) {
-			gfx_printf("[FATAL] index is not an integer");
+			SCRIPT_FATAL_ERR("Index is not an integer");
 			return NULL;
 		}
 			
@@ -86,8 +89,7 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 		return &emptyClass;
 	}
 
-	gfx_printf("[FATAL] Arguments do not match function defenition");
-	return NULL;
+	SCRIPT_FATAL_ERR("Arguments do not match function defenition(s)");
 }
 
 Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
@@ -148,8 +150,10 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 
 			if (!tooManyArgs)
 				res = genericCallDirect(var, argsHolder, argCount);
-			else
-				gfx_printf("[FATAL] too many args provided");
+			else {
+				SCRIPT_FATAL_ERR("Too many args provided (got more than %d)", argCount);
+			}
+				
 
 			for (int i = 0; i < argCount; i++)
 				removePendingReference(argsHolder[i]);
@@ -184,7 +188,6 @@ Variable_t getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunc
 		}
 	}
 
-	gfx_printf("[FATAL] Did not find member with specified name");
 	return (Variable_t){ 0 };
 }
 
@@ -206,11 +209,11 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
 		if (var->variableType == memberGetters[i].classType) {
 			Variable_t funcRef = memberGetters[i].func(var, memberName);
-			if (funcRef.variableType == None)
-				return NULL;
+			if (funcRef.variableType == None) {
+				SCRIPT_FATAL_ERR("Did not find member '%s'", memberName);
+			}
 
-			Variable_t* callRes = genericCallDirect(&funcRef, args, argsLen);
-			return callRes;
+			return genericCallDirect(&funcRef, args, argsLen);
 		}
 	}
 
