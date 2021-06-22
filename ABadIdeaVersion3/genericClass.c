@@ -31,8 +31,14 @@ MemberGetters_t memberGetters[] = {
 Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 	if (ref->extraAction == ActionExtraMemberName) {
 		for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
-			if (var->variableType == memberGetters[i].classType)
-				return memberGetters[i].func(var, ref->extra);
+			if (var->variableType == memberGetters[i].classType) {
+				Variable_t member = memberGetters[i].func(var, ref->extra);
+				if (member.variableType == None)
+					return NULL;
+
+				addPendingReference(var); // So caller doesn't fall out of scope. Don't forget to free!
+				return copyVariableToPtr(member);
+			}
 		}
 	}
 	else if (ref->extraAction == ActionExtraArrayIndex) {
@@ -140,7 +146,7 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 	}
 }
 
-Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunctionTableEntry_t* entries, u8 len) {
+Variable_t getGenericFunctionMember(Variable_t* var, char* memberName, ClassFunctionTableEntry_t* entries, u8 len) {
 	Variable_t newVar = {.readOnly = 1, .variableType = FunctionClass};
 	newVar.function.origin = var;
 	newVar.function.builtIn = 1;
@@ -152,24 +158,36 @@ Variable_t* getGenericFunctionMember(Variable_t* var, char* memberName, ClassFun
 			for (; j < len && !strcmp(entries[j].name, memberName); j++);
 			newVar.function.len = j - i;
 
-			addPendingReference(var); // So caller doesn't fall out of scope. Don't forget to free!
-			return copyVariableToPtr(newVar);
+			return newVar;
 		}
 	}
 
 	gfx_printf("[FATAL] Did not find member with specified name");
+	return (Variable_t){ 0 };
+}
+
+Variable_t* callMemberFunction(Variable_t* var, char* memberName, CallArgs_t* args) {
+	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
+		if (var->variableType == memberGetters[i].classType) {
+			Variable_t funcRef = memberGetters[i].func(var, memberName);
+			if (funcRef.variableType == None)
+				return NULL;
+
+			return genericCall(&funcRef, args);
+		}
+	}
+
 	return NULL;
 }
 
 Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** other) {
 	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
 		if (var->variableType == memberGetters[i].classType) {
-			Variable_t* funcRef = memberGetters[i].func(var, memberName);
-			if (funcRef == NULL)
-				return;
+			Variable_t funcRef = memberGetters[i].func(var, memberName);
+			if (funcRef.variableType == None)
+				return NULL;
 
-			Variable_t* callRes = genericCallDirect(funcRef, other, (other == NULL) ? 0 : 1);
-			removePendingReference(funcRef);
+			Variable_t* callRes = genericCallDirect(&funcRef, other, (other == NULL) ? 0 : 1);
 			return callRes;
 		}
 	}

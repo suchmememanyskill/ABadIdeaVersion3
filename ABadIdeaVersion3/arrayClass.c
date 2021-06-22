@@ -48,19 +48,20 @@ ClassFunction(arrayForEach) {
 	Vector_t* v = &caller->solvedArray.vector;
 
 	Callback_SetVar_t setVar = { .isTopLevel = 1, .varName = (*args)->string.value };
+	Variable_t* iter = NULL;
+	if (caller->variableType == IntArrayClass)
+		iter = copyVariableToPtr(newIntVariable(0));
+
+	runtimeVariableEdit(&setVar, iter);
 
 	for (int i = 0; i < v->count; i++) {
 		if (caller->variableType == IntArrayClass) {
 			s64* arr = v->data;
-			Variable_t* iter = copyVariableToPtr(newIntVariable(arr[i], 0));
-			
-			runtimeVariableEdit(&setVar, iter);
-			
+			iter->integer.value = arr[i];
+						
 			Variable_t* res = genericCallDirect(args[1], NULL, 0);
 			if (res == NULL)
 				return NULL;
-
-			removePendingReference(res);
 		}
 	}
 
@@ -74,6 +75,6 @@ ClassFunctionTableEntry_t arrayFunctions[] = {
 	{"foreach", arrayForEach, 2, oneStringoneFunction}
 };
 
-Variable_t* getArrayMember(Variable_t* var, char* memberName) {
+Variable_t getArrayMember(Variable_t* var, char* memberName) {
 	return getGenericFunctionMember(var, memberName, arrayFunctions, ARRAY_SIZE(arrayFunctions));
 }

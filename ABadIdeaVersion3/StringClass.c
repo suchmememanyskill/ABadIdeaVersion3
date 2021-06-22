@@ -56,6 +56,6 @@ ClassFunctionTableEntry_t stringFunctions[] = {
 	{"len", getStringLength, 0, 0},
 };
 
-Variable_t* getStringMember(Variable_t* var, char* memberName) {
+Variable_t getStringMember(Variable_t* var, char* memberName) {
 	return getGenericFunctionMember(var, memberName, stringFunctions, ARRAY_SIZE(stringFunctions));
 }

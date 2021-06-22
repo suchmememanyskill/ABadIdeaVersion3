@@ -3,4 +3,4 @@
 #include "genericClass.h"
 #include "vector.h"
 
-Variable_t* getArrayReferenceMember(Variable_t* var, char* memberName);
+Variable_t getArrayReferenceMember(Variable_t* var, char* memberName);

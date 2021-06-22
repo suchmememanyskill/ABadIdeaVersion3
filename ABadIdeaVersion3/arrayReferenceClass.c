@@ -19,6 +19,6 @@ ClassFunctionTableEntry_t arrayReferenceFunctions[] = {
 	{"project", projectArray, 0, 0},
 };
 
-Variable_t* getArrayReferenceMember(Variable_t* var, char* memberName) {
+Variable_t getArrayReferenceMember(Variable_t* var, char* memberName) {
 	return getGenericFunctionMember(var, memberName, arrayReferenceFunctions, ARRAY_SIZE(arrayReferenceFunctions));
 }

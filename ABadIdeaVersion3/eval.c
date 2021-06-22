@@ -83,7 +83,13 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 	while (args) {
 		Variable_t* varNext = NULL;
 		if (args->action == ActionGet) {
-			varNext = genericGet(var, args);
+			if (args->extraAction == ActionExtraMemberName && args->next != NULL && args->next->action == ActionCall) {
+				varNext = callMemberFunction(var, args->extra, args->next);
+				args = args->next;
+			}
+			else {
+				varNext = genericGet(var, args);
+			}
 		}
 		else if (args->action == ActionSet) {
 			if (args->extraAction == ActionExtraMemberName || args->extraAction == ActionExtraArrayIndex) {
