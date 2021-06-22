@@ -8,6 +8,7 @@
 
 u8 anotherOneIntArg[] = { IntClass };
 u8 oneStringoneFunction[] = { StringClass, FunctionClass };
+u8 oneIntOneAny[] = { IntClass, VARARGCOUNT };
 
 ClassFunction(getArrayIdx) {
 	s64 getVal = (*args)->integer.value;
@@ -68,11 +69,40 @@ ClassFunction(arrayForEach) {
 	return &emptyClass;
 ;}
 
+ClassFunction(arrayCopy) {
+	Vector_t* v = &caller->solvedArray.vector;
+	Vector_t copiedArray = vecCopy(v);
+	Variable_t var = { .variableType = caller->variableType, .solvedArray.vector = copiedArray };
+	return copyVariableToPtr(var);
+}
+
+ClassFunction(arraySet) {
+	s64 idx = getIntValue(*args);
+	Vector_t* v = &caller->solvedArray.vector;
+	if (v->count < idx || idx <= 0) {
+		gfx_printf("[FATAL] index out of bounds");
+		return NULL;
+	}
+
+	if (caller->variableType == IntArrayClass) {
+		if (args[1]->variableType != IntClass) {
+			return NULL; // TODO: add proper error handling
+		}
+
+		s64* a = v->data;
+		a[idx] = getIntValue(args[1]);
+	}
+
+	return &emptyClass;
+}
+
 ClassFunctionTableEntry_t arrayFunctions[] = {
 	{"get", getArrayIdx, 1, anotherOneIntArg },
 	{"len", getArrayLen, 0, 0},
 	{"skip", createRefSkip, 1, anotherOneIntArg},
-	{"foreach", arrayForEach, 2, oneStringoneFunction}
+	{"foreach", arrayForEach, 2, oneStringoneFunction},
+	{"copy", arrayCopy, 0, 0},
+	{"set", arraySet, 2, oneIntOneAny},
 };
 
 Variable_t getArrayMember(Variable_t* var, char* memberName) {

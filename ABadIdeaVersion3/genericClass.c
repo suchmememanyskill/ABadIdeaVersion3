@@ -44,14 +44,15 @@ Variable_t* genericGet(Variable_t* var, CallArgs_t* ref) {
 	else if (ref->extraAction == ActionExtraArrayIndex) {
 		Function_t* idx = ref->extra;
 		Variable_t *solvedIdx = eval(idx->operations.data, idx->operations.count, 1);
-		removePendingReference(solvedIdx);
+		
 		if (solvedIdx->variableType != IntClass) {
 			gfx_printf("[FATAL] index is not an integer");
 			return NULL;
 		}
 			
-
-		return callMemberFunctionDirect(var, "get", &solvedIdx);
+		Variable_t* res = callMemberFunctionDirect(var, "get", &solvedIdx, 1);
+		removePendingReference(solvedIdx);
+		return res;
 	}
 
 	return NULL;
@@ -67,7 +68,7 @@ Variable_t* genericCallDirect(Variable_t* var, Variable_t** args, u8 len) {
 				int valid = 1;
 				if (var->function.builtInPtr[i].argCount != VARARGCOUNT) {
 					for (u32 j = 0; j < var->function.builtInPtr[i].argCount; j++) {
-						if (var->function.builtInPtr[i].argTypes[j] != args[j]->variableType || var->function.builtInPtr[i].argTypes[j] == VARARGCOUNT) {
+						if (var->function.builtInPtr[i].argTypes[j] != args[j]->variableType && var->function.builtInPtr[i].argTypes[j] != VARARGCOUNT) {
 							valid = 0;
 							break;
 						}
@@ -201,14 +202,14 @@ Variable_t* callMemberFunction(Variable_t* var, char* memberName, CallArgs_t* ar
 	return NULL;
 }
 
-Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** other) {
+Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable_t** args, u8 argsLen) {
 	for (u32 i = 0; i < ARRAY_SIZE(memberGetters); i++) {
 		if (var->variableType == memberGetters[i].classType) {
 			Variable_t funcRef = memberGetters[i].func(var, memberName);
 			if (funcRef.variableType == None)
 				return NULL;
 
-			Variable_t* callRes = genericCallDirect(&funcRef, other, (other == NULL) ? 0 : 1);
+			Variable_t* callRes = genericCallDirect(&funcRef, args, argsLen);
 			return callRes;
 		}
 	}

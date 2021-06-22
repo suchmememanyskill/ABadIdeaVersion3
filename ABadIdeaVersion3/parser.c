@@ -328,6 +328,7 @@ ParserRet_t parseScript(char* in) {
 				else if (lastOp->token == CallArgs) {
 					CallArgs_t* last = getLastRef(&lastOp->callArgs);
 					last->action = ActionSet;
+					continue;
 				}
 				else {
 					gfx_printf("[FATAL] Trying to assign to non-object");

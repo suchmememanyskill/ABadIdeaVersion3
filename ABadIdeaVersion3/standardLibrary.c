@@ -50,7 +50,7 @@ ClassFunction(stdWhile) {
 
 ClassFunction(stdPrint) {
 	for (int i = 0; i < argsLen; i++) {
-		Variable_t* res = callMemberFunctionDirect(args[i], "print", NULL);
+		Variable_t* res = callMemberFunctionDirect(args[i], "print", NULL, 0);
 		if (res == NULL)
 			return NULL;
 	}

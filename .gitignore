@@ -350,3 +350,5 @@ MigrationBackup/
 .ionide/
 
 ABadIdeaVersion3/input.te
+
+*.te

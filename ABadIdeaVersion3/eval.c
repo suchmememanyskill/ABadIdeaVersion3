@@ -57,7 +57,7 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 
 			if (var == NULL) {
 				if (args != NULL) {
-					if (args->action == ActionSet) {
+					if (args->action == ActionSet && args->extraAction == ActionExtraNone) {
 						setCallback->isTopLevel = 1;
 						setCallback->varName = op->variable.name;
 						setCallback->hasVarName = 1;
@@ -92,6 +92,11 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 			}
 		}
 		else if (args->action == ActionSet) {
+			if (var->readOnly) {
+				gfx_printf("[FATAL] Variable which set was called on is read-only");
+				return NULL;
+			}
+
 			if (args->extraAction == ActionExtraMemberName || args->extraAction == ActionExtraArrayIndex) {
 				setCallback->hasVarName = (args->extraAction == ActionExtraMemberName) ? 1 : 0;
 				setCallback->setVar = var;
@@ -143,6 +148,18 @@ void runtimeVariableEdit(Callback_SetVar_t* set, Variable_t* curRes) {
 		newStoredVariable.var = curRes;
 		vecAdd(&runtimeVars, newStoredVariable);
 		return;
+	}
+
+	if (set->idxVar) {
+		Variable_t* var = eval(set->idxVar->operations.data, set->idxVar->operations.count, 1);
+		Variable_t* args[2] = { var, curRes };
+		callMemberFunctionDirect(set->setVar, "set", args, 2);
+		removePendingReference(var);
+	}
+	else {
+		Variable_t varName = { .variableType = StringClass, .reference = 1, .string.value = set->varName };
+		Variable_t* args[2] = { &varName, curRes };
+		callMemberFunctionDirect(set->setVar, "set", args, 2);
 	}
 
 	// TODO: add non-top level sets
@@ -202,7 +219,7 @@ Variable_t* eval(Operator_t* ops, u32 len, u8 ret) {
 		}
 
 		// Issue lies here for freeing issues, curRes is corrupted
-		Variable_t* result = callMemberFunctionDirect(curRes, curOp->tokenStr, &rightSide);
+		Variable_t* result = callMemberFunctionDirect(curRes, curOp->tokenStr, &rightSide, 1);
 		// Free old values
 
 		removePendingReference(curRes);
