@@ -4,13 +4,6 @@
 #include <malloc.h>
 #include <string.h>
 
-s64 getIntValue(Variable_t* var) {
-	if (var->variableType != IntClass)
-		return 0;
-
-	return var->integer.value;
-}
-
 IntClass_t createIntClass(s64 in) {
 	IntClass_t a = { in };
 	return a;

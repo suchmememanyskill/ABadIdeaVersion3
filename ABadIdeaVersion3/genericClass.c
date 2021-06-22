@@ -101,9 +101,15 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 			return genericCallDirect(var, NULL, 0);
 		}
 		else {
-			Vector_t argsHolder = newVec(sizeof(Variable_t*), 1);
+			//Vector_t argsHolder = newVec(sizeof(Variable_t*), 1);
+			Variable_t** argsHolder = NULL;
+			if (var->function.builtInPtr->argCount != 0)
+				argsHolder = malloc(sizeof(Variable_t*) * var->function.builtInPtr->argCount);
+			int argCount = 0;
 			int lasti = 0;
 			Operator_t* ops = f->operations.data;
+
+			int tooManyArgs = 0;
 
 			// Loops trough the function to get all args out
 			for (int i = 0; i < f->operations.count; i++) {
@@ -111,31 +117,46 @@ Variable_t* genericCall(Variable_t* var, CallArgs_t* ref) {
 					if (i + 1 == f->operations.count)
 						i++;
 
-					if (var->function.firstArgAsFunction && argsHolder.count == 0) {
+					if (argCount == var->function.builtInPtr->argCount) {
+						tooManyArgs = 1;
+						break;
+					}
+
+					if (var->function.firstArgAsFunction && argCount == 0) {
 						Function_t f = { .operations = vecFromArray(&ops[lasti], i - lasti, sizeof(Operator_t)) };
 						Variable_t var = newFunctionVariable(createFunctionClass(f, NULL));
 						var.reference = 1;
 						Variable_t* varPtr = copyVariableToPtr(var);
-						vecAdd(&argsHolder, varPtr);
+						//vecAdd(&argsHolder, varPtr);
+						argsHolder[argCount++] = varPtr;
 					}
 					else {
 						Variable_t* var = eval(&ops[lasti], i - lasti, 1);
 						if (var == NULL)
 							return NULL; // maybe free first?
 
-						vecAdd(&argsHolder, var);
+						//vecAdd(&argsHolder, var);
+						argsHolder[argCount++] = var;
 					}
 
-					lasti = i;
+					lasti = i + 1;
 				}
 			}
+			
+			Variable_t* res = NULL;
 
-			Variable_t *res = genericCallDirect(var, argsHolder.data, argsHolder.count);
+			if (!tooManyArgs)
+				res = genericCallDirect(var, argsHolder, argCount);
+			else
+				gfx_printf("[FATAL] too many args provided");
 
-			vecForEach(Variable_t**, tofree, (&argsHolder))
-				removePendingReference(*tofree);
+			for (int i = 0; i < argCount; i++)
+				removePendingReference(argsHolder[i]);
 
-			vecFree(argsHolder);
+			//vecForEach(Variable_t**, tofree, (&argsHolder))
+			//	removePendingReference(*tofree);
+
+			FREE(argsHolder);
 
 			return res;
 		}
