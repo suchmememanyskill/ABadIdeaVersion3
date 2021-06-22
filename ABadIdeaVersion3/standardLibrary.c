@@ -30,9 +30,8 @@ ClassFunction(stdWhile) {
 	if (result == NULL || result->variableType != IntClass)
 		return NULL;
 
-	removePendingReference(result);
-
 	while (result->integer.value) {
+		removePendingReference(result);
 		Variable_t* res = genericCallDirect(args[1], NULL, 0);
 		if (res == NULL)
 			return NULL;
@@ -42,9 +41,9 @@ ClassFunction(stdWhile) {
 		result = eval(args[0]->function.function.operations.data, args[0]->function.function.operations.count, 1);
 		if (result == NULL || result->variableType != IntClass)
 			return NULL;
-
-		removePendingReference(result);
 	}
+
+	removePendingReference(result);
 
 	return &emptyClass;
 }
