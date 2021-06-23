@@ -11,6 +11,8 @@
 // TODO: free-ing vars & script at end
 // TODO: implement functions from tsv2
 // TODO: add len to string
+// TODO: clear old int values from array
+// TODO: int and str should be statically included in OP_t
 
 char* readFile(char* path) {
     FILE* fp = fopen(path, "r");
@@ -75,6 +77,6 @@ int main()
     
     Variable_t* res = eval(ret.main.operations.data, ret.main.operations.count, 1);
 
+    exitRuntimeVars();
     exitGarbageCollector();
-
 }

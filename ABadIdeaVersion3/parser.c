@@ -310,18 +310,26 @@ ParserRet_t parseScript(char* in) {
 			op.variable = reference;
 		}
 		else if (tokenType == Token_Int) {
+			/*
 			Variable_t a = newIntVariable(*((s64*)var));
 			a.gcDoNotFree = 1;
 			free(var);
 			vecAdd(&staticVariableHolder, a);
 			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+			*/
+
+			VariableReference_t reference = { .staticVariableType = 1, .integerType = *((s64*)var) };
 			op.variable = reference;
 		}
 		else if (tokenType == Token_String) {
+			/*
 			Variable_t a = newStringVariable(var, 1, 1);
 			a.gcDoNotFree = 1;
 			vecAdd(&staticVariableHolder, a);
 			CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
+			*/
+
+			VariableReference_t reference = { .staticVariableType = 2, .stringType = var };
 			op.variable = reference;
 		}
 		else if (tokenType == Token_Token) {
@@ -490,7 +498,7 @@ ParserRet_t parseScript(char* in) {
 							op.token = Variable;
 
 
-							Variable_t a = createUnsolvedArrayVariable(astack, staticVariableHolder.data);
+							Variable_t a = createUnsolvedArrayVariable(astack, &staticVariableHolder);
 							vecAdd(&staticVariableHolder, a);
 							CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 							op.variable = reference;
@@ -500,7 +508,7 @@ ParserRet_t parseScript(char* in) {
 					}
 					else {
 						// TODO: optimize output to a typed array, if possible
-						Variable_t a = createUnsolvedArrayVariable(astack, staticVariableHolder.data);
+						Variable_t a = createUnsolvedArrayVariable(astack, &staticVariableHolder);
 						vecAdd(&staticVariableHolder, a);
 						CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 						op.variable = reference;

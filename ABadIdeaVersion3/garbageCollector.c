@@ -88,6 +88,7 @@ void removePendingReference(Variable_t* ref) {
 */
 
 void processPendingReferences() {
+	return; //stubbed
 	vecForEach(Variable_t**, references, (&pendingAdd))
 		modReference(*references, 1);
 

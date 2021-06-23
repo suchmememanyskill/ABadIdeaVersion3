@@ -6,6 +6,8 @@
 #include "vector.h"
 #include "standardLibrary.h"
 #include "scriptError.h"
+#include "StringClass.h"
+#include "intClass.h"
 #include <string.h>
 
 Variable_t* staticVars;
@@ -21,14 +23,12 @@ void initRuntimeVars() {
 }
 
 void exitRuntimeVars() {
-	
-	vecForEach(Dict_t*, variableArrayEntry, (&runtimeVars)) {
-		removePendingReference(variableArrayEntry->var);
+	vecForEach(Dict_t*, runtimeVar, (&runtimeVars)) {
+		FREE(runtimeVar->name);
+		removePendingReference(runtimeVar->var);
 	}
 
-	processPendingReferences();
-
-	vecFree(runtimeVars);	
+	vecFree(runtimeVars);
 }
 
 Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
@@ -52,6 +52,13 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 			}
 
 			var = op->variable.staticVariable;
+		}
+		else if (op->variable.staticVariableType == 1) {
+			var = copyVariableToPtr(newIntVariable(op->variable.integerType));
+		}
+		else if (op->variable.staticVariableType == 2) {
+			var = copyVariableToPtr(newStringVariable(op->variable.stringType, 1, 0));
+			var->reference = 1;
 		}
 		else {
 			var = searchStdLib(op->variable.name);

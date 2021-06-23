@@ -27,7 +27,7 @@ Variable_t* solveArray(Variable_t *unsolvedArray) {
 	}
 }
 
-Variable_t createUnsolvedArrayVariable(Function_t* f, Variable_t* staticVars) {
+Variable_t createUnsolvedArrayVariable(Function_t* f, Vector_t* staticVars) {
 	Variable_t var = { 0 };
 	Vector_t holder = { 0 };
 	u8 varType = Invalid;
@@ -36,14 +36,10 @@ Variable_t createUnsolvedArrayVariable(Function_t* f, Variable_t* staticVars) {
 	if (f->operations.count > 0) {
 		vecForEach(Operator_t*, curOp, (&f->operations)) {
 			if (holder.data == NULL) {
-				Variable_t* var = getStaticVariableFromOp(curOp, staticVars);
-				if (var == NULL)
-					break;
-				
-				if (var->variableType == IntClass) {
+				if (curOp->variable.staticVariableType == 1) {
 					varType = IntClass;
 					holder = newVec(sizeof(s64), 4);
-					vecAdd(&holder, var->integer.value);
+					vecAdd(&holder, (curOp->variable.integerType));
 				}
 				else {
 					break;
@@ -51,11 +47,10 @@ Variable_t createUnsolvedArrayVariable(Function_t* f, Variable_t* staticVars) {
 			}
 			else {
 				if ((curOp - 1)->token == EquationSeperator && curOp->token == Variable) {
-					Variable_t* var = getStaticVariableFromOp(curOp, staticVars);
 
-					if (var != NULL && var->variableType == varType) {
+					if (curOp->variable.staticVariableType == 1) {
 						if (varType == IntClass) {
-							vecAdd(&holder, var->integer.value);
+							vecAdd(&holder, curOp->variable.integerType);
 						}
 					}
 					else {
@@ -83,6 +78,15 @@ Variable_t createUnsolvedArrayVariable(Function_t* f, Variable_t* staticVars) {
 		else if (varType == StringClass) {
 			var.variableType = StringArrayClass;
 		}
+
+		Variable_t* staticVarPtr = staticVars->data;
+		for (int i = staticVars->count - holder.count; i < staticVars->count; i++) {
+			Variable_t* currentVarPtr = &staticVarPtr[i];
+			//freeVariable(&currentVarPtr);
+			// TODO: free inside variable!
+		}
+
+		//staticVars->count -= holder.count;
 
 		vecFree(f->operations); // TODO: clean properly
 		var.solvedArray.vector = holder;
