@@ -320,6 +320,7 @@ ParserRet_t parseScript(char* in) {
 
 			VariableReference_t reference = { .staticVariableType = 1, .integerType = *((s64*)var) };
 			op.variable = reference;
+			free(var);
 		}
 		else if (tokenType == Token_String) {
 			/*
@@ -559,8 +560,13 @@ ParserRet_t parseScript(char* in) {
 void exitFunction(Operator_t* start, u32 len) {
 	for (u32 i = 0; i < len; i++) {
 		if (start[i].token == Variable) {
-			if (start[i].variable.staticVariableOptionsUnion == 0)
+			if (start[i].variable.staticVariableOptionsUnion == 0) {
 				FREE(start[i].variable.name);
+			}
+
+			if (start[i].variable.staticVariableType == 2) {
+				FREE(start[i].variable.stringType);
+			}
 		}
 		else if (start[i].token == BetweenBrackets) {
 			exitFunction(start[i].variable.betweenBrackets.data, start[i].variable.betweenBrackets.len);
@@ -574,6 +580,7 @@ void exitFunction(Operator_t* start, u32 len) {
 					Function_t* f = call->extra;
 					exitFunction(f->operations.data, f->operations.count);
 					vecFree(f->operations);
+					FREE(f);
 				}
 				else if (call->extraAction == ActionExtraMemberName) {
 					FREE(call->extra);
@@ -582,6 +589,7 @@ void exitFunction(Operator_t* start, u32 len) {
 					Function_t* f = call->extra;
 					exitFunction(f->operations.data, f->operations.count);
 					vecFree(f->operations);
+					FREE(f);
 				}
 
 				CallArgs_t* nextCall = call->next;
