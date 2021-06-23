@@ -60,8 +60,6 @@ int main()
 
     return;
     */
-
-    for (int i = 0; i < 4000000000; i++);
     
     initGarbageCollector();
 
@@ -87,6 +85,4 @@ int main()
     vecFree(ret.main.operations);
 
     gfx_printf("done");
-
-    for (int i = 0; i < 4000000000; i++);
 }

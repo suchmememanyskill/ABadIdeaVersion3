@@ -217,6 +217,7 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 		}
 	}
 
+	SCRIPT_FATAL_ERR("Could not find function table for given type");
 	return NULL;
 }
 

@@ -6,6 +6,7 @@
 #include "garbageCollector.h"
 #include "eval.h"
 #include "scriptError.h"
+#include "StringClass.h"
 
 u8 anotherOneIntArg[] = { IntClass };
 u8 oneStringoneFunction[] = { StringClass, FunctionClass };
@@ -20,7 +21,18 @@ ClassFunction(getArrayIdx) {
 
 	if (caller->variableType == IntArrayClass) {
 		s64* arr = caller->solvedArray.vector.data;
-		return copyVariableToPtr(newIntVariable(arr[getVal], 0));
+		return copyVariableToPtr(newIntVariable(arr[getVal]));
+	}
+	else if (caller->variableType == StringArrayClass) {
+		char** arr = caller->solvedArray.vector.data;
+		Variable_t v = newStringVariable(arr[getVal], 1, 0);
+		v.readOnly = 1;
+		v.reference = 1;
+		return copyVariableToPtr(v);
+	}
+	else if (caller->variableType == ByteArrayClass) {
+		u8* arr = caller->solvedArray.vector.data;
+		return copyVariableToPtr(newIntVariable(arr[getVal]));
 	}
 
 	return NULL;
@@ -58,11 +70,22 @@ ClassFunction(arrayForEach) {
 		if (caller->variableType == IntArrayClass) {
 			s64* arr = v->data;
 			iter->integer.value = arr[i];
-						
-			Variable_t* res = genericCallDirect(args[1], NULL, 0);
-			if (res == NULL)
-				return NULL;
 		}
+		else if (caller->variableType == StringArrayClass) {
+			char** arr = caller->solvedArray.vector.data;
+			Variable_t v = newStringVariable(arr[i], 1, 0);
+			v.readOnly = 1;
+			v.reference = 1;
+			*iter = v;
+		}
+		else if (caller->variableType == ByteArrayClass) {
+			u8* arr = v->data;
+			iter->integer.value = arr[i];
+		}
+
+		Variable_t* res = genericCallDirect(args[1], NULL, 0);
+		if (res == NULL)
+			return NULL;
 	}
 
 	return &emptyClass;
@@ -89,6 +112,23 @@ ClassFunction(arraySet) {
 
 		s64* a = v->data;
 		a[idx] = getIntValue(args[1]);
+	}
+	else if (caller->variableType == StringArrayClass) {
+		if (args[1]->variableType != StringClass) {
+			return NULL; // TODO: add proper error handling
+		}
+
+		char** a = v->data;
+		FREE(a[idx]);
+		a[idx] = CpyStr(args[1]->string.value);
+	}
+	else if (caller->variableType == ByteArrayClass) {
+		if (args[1]->variableType != IntClass) {
+			return NULL; // TODO: add proper error handling
+		}
+
+		u8* a = v->data;
+		a[idx] = (u8)(getIntValue(args[1]) & 0xFF);
 	}
 
 	return &emptyClass;

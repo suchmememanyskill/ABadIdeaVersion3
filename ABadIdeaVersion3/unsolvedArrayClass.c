@@ -2,6 +2,7 @@
 #include "eval.h"
 #include "compat.h"
 #include "intClass.h"
+#include <string.h>
 
 Variable_t* solveArray(Variable_t *unsolvedArray) {
 	if (unsolvedArray->unsolvedArray.operations.count <= 0) {
@@ -28,16 +29,36 @@ Variable_t createUnsolvedArrayVariable(Function_t* f) {
 					holder = newVec(sizeof(s64), 4);
 					vecAdd(&holder, (curOp->variable.integerType));
 				}
+				else if (curOp->variable.staticVariableType == 2) {
+					if (!strcmp(curOp->variable.stringType, "BYTE[]")) {
+						varType = ByteArrayClass; // Repurpose varType
+						holder = newVec(sizeof(u8), 4);
+						FREE(curOp->variable.stringType);
+					}
+					else {
+						varType = StringClass;
+						holder = newVec(sizeof(char*), 4);
+						vecAdd(&holder, (curOp->variable.stringType));
+					}
+				}
 				else {
 					break;
 				}
 			}
 			else {
 				if ((curOp - 1)->token == EquationSeperator && curOp->token == Variable) {
-
 					if (curOp->variable.staticVariableType == 1) {
 						if (varType == IntClass) {
 							vecAdd(&holder, curOp->variable.integerType);
+						}
+						else if (varType == ByteArrayClass) {
+							u8 var = (u8)(curOp->variable.integerType & 0xFF);
+							vecAdd(&holder, var);
+						}
+					}
+					else if (curOp->variable.staticVariableType == 2) {
+						if (varType == StringClass) {
+							vecAdd(&holder, curOp->variable.stringType);
 						}
 					}
 					else {
@@ -65,8 +86,11 @@ Variable_t createUnsolvedArrayVariable(Function_t* f) {
 		else if (varType == StringClass) {
 			var.variableType = StringArrayClass;
 		}
+		else {
+			var.variableType = varType;
+		}
 
-		vecFree(f->operations); // TODO: clean properly
+		vecFree(f->operations);
 		var.solvedArray.vector = holder;
 		var.readOnly = 1;
 	}
