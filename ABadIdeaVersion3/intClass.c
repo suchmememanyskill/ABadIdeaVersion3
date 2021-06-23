@@ -65,6 +65,10 @@ ClassFunction(smallerIntVariables) {
 	return newIntVariablePtr((i1 < i2), 0);
 }
 
+ClassFunction(notInt) {
+	return newIntVariablePtr(!(getIntValue(caller)));
+}
+
 u8 oneVarArg[] = { VARARGCOUNT };
 u8 oneIntArg[] = { IntClass };
 
@@ -76,6 +80,7 @@ ClassFunctionTableEntry_t intFunctions[] = {
 	{"==", equalIntVariables, 1, oneIntArg },
 	{"!=", notEqualIntVariables, 1, oneIntArg },
 	{"<", smallerIntVariables, 1, oneIntArg},
+	{"not", notInt, 0, 0},
 };
 
 Variable_t getIntegerMember(Variable_t* var, char* memberName) {

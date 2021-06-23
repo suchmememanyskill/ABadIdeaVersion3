@@ -137,7 +137,12 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 		args = args->next;
 	}
 
-	// Stubbed
+	if (op->not && var) {
+		Variable_t* newVar = callMemberFunctionDirect(var, "not", NULL, 0);
+		removePendingReference(var);
+		var = newVar;
+	}
+	
 	return var;
 }
 

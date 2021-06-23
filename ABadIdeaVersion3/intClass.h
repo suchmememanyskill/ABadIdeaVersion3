@@ -5,7 +5,7 @@
 
 
 
-#define getIntValue(var) (var)->integer.value;
+#define getIntValue(var) (var)->integer.value
 
 IntClass_t createIntClass(s64 in);
 
