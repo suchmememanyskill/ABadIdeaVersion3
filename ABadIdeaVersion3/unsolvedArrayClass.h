@@ -3,4 +3,4 @@
 #include "genericClass.h"
 #include "vector.h"
 
-Variable_t createUnsolvedArrayVariable(Function_t* f, Variable_t* staticVars);
+Variable_t createUnsolvedArrayVariable(Function_t* f);

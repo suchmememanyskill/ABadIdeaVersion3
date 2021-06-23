@@ -22,3 +22,4 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 Variable_t* genericCall(Variable_t* var, CallArgs_t* ref);
 void freeVariable(Variable_t** target);
 Variable_t* callMemberFunction(Variable_t* var, char* memberName, CallArgs_t* args);
+void freeVariableInternal(Variable_t* referencedTarget);

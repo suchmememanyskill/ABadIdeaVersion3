@@ -220,24 +220,29 @@ Variable_t* callMemberFunctionDirect(Variable_t* var, char* memberName, Variable
 	return NULL;
 }
 
+void freeVariableInternal(Variable_t* referencedTarget) {
+	switch (referencedTarget->variableType) {
+		case StringClass:
+			if (referencedTarget->string.free)
+				gfx_printf("FREE STRING GETTING FREED AAA");
+			FREE(referencedTarget->string.value);
+			break;
+		case StringArrayClass:
+			vecForEach(char**, stringsInArray, (&referencedTarget->solvedArray.vector))
+				FREE(*stringsInArray);
+		case ByteArrayClass:
+		case IntArrayClass:
+			vecFree(referencedTarget->solvedArray.vector);
+			break;
+	}
+}
+
 void freeVariable(Variable_t** target) {
 	// Add specific freeing logic here
 	Variable_t* referencedTarget = *target;
 	
 	if (!referencedTarget->reference) {
-		switch (referencedTarget->variableType) {
-			case StringClass:
-			if (referencedTarget->string.free)
-				FREE(referencedTarget->string.value);
-			break;
-			case StringArrayClass:
-				vecForEach(char**, stringsInArray, (&referencedTarget->solvedArray.vector))
-					FREE(*stringsInArray);
-			case ByteArrayClass:
-			case IntArrayClass:
-				vecFree(referencedTarget->solvedArray.vector);
-				break;
-		}
+		freeVariableInternal(referencedTarget);
 	}
 	
 

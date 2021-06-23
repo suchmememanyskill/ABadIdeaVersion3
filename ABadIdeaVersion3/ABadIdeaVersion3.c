@@ -6,13 +6,13 @@
 #include "eval.h"
 #include "garbageCollector.h"
 
-// TODO: error handling
+// TODO: error handling DONE
 // TODO: unsolved arrays
 // TODO: free-ing vars & script at end
 // TODO: implement functions from tsv2
 // TODO: add len to string
-// TODO: clear old int values from array
-// TODO: int and str should be statically included in OP_t
+// TODO: clear old int values from array DONE
+// TODO: int and str should be statically included in OP_t DONE
 
 char* readFile(char* path) {
     FILE* fp = fopen(path, "r");
@@ -60,6 +60,8 @@ int main()
 
     return;
     */
+
+    for (int i = 0; i < 4000000000; i++);
     
     initGarbageCollector();
 
@@ -79,4 +81,12 @@ int main()
 
     exitRuntimeVars();
     exitGarbageCollector();
+    exitStaticVars(&ret.staticVarHolder);
+    exitFunction(ret.main.operations.data, ret.main.operations.count);
+    vecFree(ret.staticVarHolder);
+    vecFree(ret.main.operations);
+
+    gfx_printf("done");
+
+    for (int i = 0; i < 4000000000; i++);
 }

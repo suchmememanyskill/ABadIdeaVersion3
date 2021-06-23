@@ -3,31 +3,18 @@
 #include "compat.h"
 #include "intClass.h"
 
-Variable_t* getStaticVariableFromOp(Operator_t* op, Variable_t *staticVars) {
-	Variable_t* var = NULL;
-	if (op->variable.staticVariableSet) {
-		if (op->variable.staticVariableRef) {
-			op->variable.staticVariable = &staticVars[(int)op->variable.staticVariable];
-			op->variable.staticVariableRef = 0;
-		}
-
-		var = op->variable.staticVariable;
-		var->readOnly = 1;
-		var->reference = 1;
-		var->gcDoNotFree = 1;
-	}
-
-	return var;
-}
-
 Variable_t* solveArray(Variable_t *unsolvedArray) {
 	if (unsolvedArray->unsolvedArray.operations.count <= 0) {
-		//Variable_t 
+		return unsolvedArray;
 		// Return empty unsolved array that turns into a solved array once something is put into it
+	}
+
+	vecForEach(Operator_t*, curOp, (&unsolvedArray->unsolvedArray.operations)) {
+
 	}
 }
 
-Variable_t createUnsolvedArrayVariable(Function_t* f, Vector_t* staticVars) {
+Variable_t createUnsolvedArrayVariable(Function_t* f) {
 	Variable_t var = { 0 };
 	Vector_t holder = { 0 };
 	u8 varType = Invalid;
@@ -78,15 +65,6 @@ Variable_t createUnsolvedArrayVariable(Function_t* f, Vector_t* staticVars) {
 		else if (varType == StringClass) {
 			var.variableType = StringArrayClass;
 		}
-
-		Variable_t* staticVarPtr = staticVars->data;
-		for (int i = staticVars->count - holder.count; i < staticVars->count; i++) {
-			Variable_t* currentVarPtr = &staticVarPtr[i];
-			//freeVariable(&currentVarPtr);
-			// TODO: free inside variable!
-		}
-
-		//staticVars->count -= holder.count;
 
 		vecFree(f->operations); // TODO: clean properly
 		var.solvedArray.vector = holder;

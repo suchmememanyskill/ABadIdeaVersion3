@@ -182,11 +182,15 @@ typedef struct {
 } Array_t;
 
 typedef struct _VariableReference_t {
-	struct {
-		u8 staticVariableSet : 1;
-		u8 staticVariableRef : 1;
-		u8 staticVariableType : 2; // 0 = ref, 1 = int, 2 = str
+	union {
+		struct {
+			u8 staticVariableSet : 1;
+			u8 staticVariableRef : 1;
+			u8 staticVariableType : 2; // 0 = ref, 1 = int, 2 = str
+		};
+		u8 staticVariableOptionsUnion;
 	};
+
 	union {
 		Variable_t* staticVariable;
 		char* name;

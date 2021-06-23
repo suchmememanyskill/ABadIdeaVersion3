@@ -498,7 +498,7 @@ ParserRet_t parseScript(char* in) {
 							op.token = Variable;
 
 
-							Variable_t a = createUnsolvedArrayVariable(astack, &staticVariableHolder);
+							Variable_t a = createUnsolvedArrayVariable(astack);
 							vecAdd(&staticVariableHolder, a);
 							CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 							op.variable = reference;
@@ -508,7 +508,7 @@ ParserRet_t parseScript(char* in) {
 					}
 					else {
 						// TODO: optimize output to a typed array, if possible
-						Variable_t a = createUnsolvedArrayVariable(astack, &staticVariableHolder);
+						Variable_t a = createUnsolvedArrayVariable(astack);
 						vecAdd(&staticVariableHolder, a);
 						CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 						op.variable = reference;
@@ -553,4 +553,56 @@ ParserRet_t parseScript(char* in) {
 	vecFree(stackHistoryHolder);
 	scriptCurrentLine = 1;
 	return parse;
+}
+
+
+void exitFunction(Operator_t* start, u32 len) {
+	for (u32 i = 0; i < len; i++) {
+		if (start[i].token == Variable) {
+			if (start[i].variable.staticVariableOptionsUnion == 0)
+				FREE(start[i].variable.name);
+		}
+		else if (start[i].token == BetweenBrackets) {
+			exitFunction(start[i].variable.betweenBrackets.data, start[i].variable.betweenBrackets.len);
+			FREE(start[i].variable.betweenBrackets.data);
+		}
+		else if (start[i].token == CallArgs) {
+			CallArgs_t* call = &start[i].callArgs;
+
+			while (call != NULL) {
+				if (call->extraAction == ActionExtraArrayIndex) {
+					Function_t* f = call->extra;
+					exitFunction(f->operations.data, f->operations.count);
+					vecFree(f->operations);
+				}
+				else if (call->extraAction == ActionExtraMemberName) {
+					FREE(call->extra);
+				}
+				else if (call->extraAction == ActionExtraCallArgs) {
+					Function_t* f = call->extra;
+					exitFunction(f->operations.data, f->operations.count);
+					vecFree(f->operations);
+				}
+
+				CallArgs_t* nextCall = call->next;
+				if (call != &start[i].callArgs)
+					FREE(call);
+				call = nextCall;
+			}
+		}
+	}
+}
+
+void exitStaticVars(Vector_t* v) {
+	vecForEach(Variable_t*, staticVar, v) {
+		if (staticVar->variableType == FunctionClass) {
+			if (!staticVar->function.builtIn) {
+				exitFunction(staticVar->function.function.operations.data, staticVar->function.function.operations.count);
+				vecFree(staticVar->function.function.operations);
+			}
+		}
+		else {
+			freeVariableInternal(staticVar);
+		}
+	}
 }
