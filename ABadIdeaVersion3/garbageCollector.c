@@ -41,11 +41,11 @@ void modReference(Variable_t* ref, u8 add) {
 			else {
 				if (--references->refCount <= 0) {
 					freeVariable(&references->ref);
-					vecRem(&storedReferences, ((u8*)references->ref - (u8*)storedReferences.data) / storedReferences.elemSz);
+					vecRem(&storedReferences, ((u8*)references - (u8*)storedReferences.data) / storedReferences.elemSz);
 
 					if (additionalFree != NULL) {
 						freeVariable(&additionalFree->ref);
-						vecRem(&storedReferences, ((u8*)additionalFree->ref - (u8*)storedReferences.data) / storedReferences.elemSz);
+						vecRem(&storedReferences, ((u8*)additionalFree - (u8*)storedReferences.data) / storedReferences.elemSz);
 					}
 				}
 			}
