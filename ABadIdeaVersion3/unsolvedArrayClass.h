@@ -4,3 +4,5 @@
 #include "vector.h"
 
 Variable_t createUnsolvedArrayVariable(Function_t* f);
+Variable_t* solveArray(Variable_t* unsolvedArray);
+Variable_t getUnsolvedArrayMember(Variable_t* var, char* memberName);

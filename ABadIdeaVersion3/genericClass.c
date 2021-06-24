@@ -10,6 +10,7 @@
 #include "arrayReferenceClass.h"
 #include "functionClass.h"
 #include "scriptError.h"
+#include "unsolvedArrayClass.h"
 
 Variable_t* copyVariableToPtr(Variable_t var) {
 	Variable_t* a = malloc(sizeof(Variable_t));
@@ -25,6 +26,7 @@ MemberGetters_t memberGetters[] = {
 	{StringArrayClass, getArrayMember},
 	{ByteArrayClass, getArrayMember},
 	{SolvedArrayReferenceClass, getArrayReferenceMember},
+	{UnresolvedArrayClass, getUnsolvedArrayMember}
 };
 
 

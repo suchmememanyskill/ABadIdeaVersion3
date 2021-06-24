@@ -8,6 +8,7 @@
 #include "scriptError.h"
 #include "StringClass.h"
 #include "intClass.h"
+#include "unsolvedArrayClass.h"
 #include <string.h>
 
 Variable_t* staticVars;
@@ -52,6 +53,10 @@ Variable_t* opToVar(Operator_t* op, Callback_SetVar_t *setCallback) {
 			}
 
 			var = op->variable.staticVariable;
+
+			if (var->variableType == UnresolvedArrayClass) {
+				var = solveArray(var);
+			}
 		}
 		else if (op->variable.staticVariableType == 1) {
 			var = copyVariableToPtr(newIntVariable(op->variable.integerType));

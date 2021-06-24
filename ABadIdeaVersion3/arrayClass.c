@@ -11,6 +11,7 @@
 u8 anotherOneIntArg[] = { IntClass };
 u8 oneStringoneFunction[] = { StringClass, FunctionClass };
 u8 oneIntOneAny[] = { IntClass, VARARGCOUNT };
+u8 anotherAnotherOneVarArg[] = { VARARGCOUNT };
 
 ClassFunction(getArrayIdx) {
 	s64 getVal = (*args)->integer.value;
@@ -105,6 +106,10 @@ ClassFunction(arraySet) {
 		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)idx, (int)caller->solvedArray.vector.count);
 	}
 
+	if (caller->readOnly) {
+		SCRIPT_FATAL_ERR("Array is read-only");
+	}
+
 	if (caller->variableType == IntArrayClass) {
 		if (args[1]->variableType != IntClass) {
 			return NULL; // TODO: add proper error handling
@@ -134,6 +139,36 @@ ClassFunction(arraySet) {
 	return &emptyClass;
 }
 
+ClassFunction(arrayAdd) {
+	Variable_t* arg = *args;
+
+	if (caller->variableType == IntArrayClass) {
+		if (arg->variableType != IntClass) {
+			return NULL; // TODO: add proper error handling
+		}
+
+		vecAdd(&caller->solvedArray.vector, arg->integer.value);
+	}
+	else if (caller->variableType == StringArrayClass) {
+		if (arg->variableType != StringClass) {
+			return NULL; // TODO: add proper error handling
+		}
+
+		char* str = CpyStr(arg->string.value);
+		vecAdd(&caller->solvedArray.vector, str);
+	}
+	else if (caller->variableType == ByteArrayClass) {
+		if (arg->variableType != IntClass) {
+			return NULL; // TODO: add proper error handling
+		}
+
+		u8 val = (u8)(arg->integer.value & 0xFF);
+		vecAdd(&caller->solvedArray.vector, val);
+	}
+
+	return &emptyClass;
+}
+
 ClassFunctionTableEntry_t arrayFunctions[] = {
 	{"get", getArrayIdx, 1, anotherOneIntArg },
 	{"len", getArrayLen, 0, 0},
@@ -141,6 +176,7 @@ ClassFunctionTableEntry_t arrayFunctions[] = {
 	{"foreach", arrayForEach, 2, oneStringoneFunction},
 	{"copy", arrayCopy, 0, 0},
 	{"set", arraySet, 2, oneIntOneAny},
+	{"+", arrayAdd, 1, anotherAnotherOneVarArg},
 };
 
 Variable_t getArrayMember(Variable_t* var, char* memberName) {
