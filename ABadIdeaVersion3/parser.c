@@ -385,6 +385,7 @@ ParserRet_t parseScript(char* in) {
 							Function_t* funcArgs = lastCall->extra;
 
 							op.token = EquationSeperator;
+							op.lineNumber = lineNumber;
 							vecAdd(&funcArgs->operations, op);
 							op.token = Variable;
 
@@ -397,10 +398,17 @@ ParserRet_t parseScript(char* in) {
 						}
 					}
 
+
+
 					Variable_t a = newFunctionVariable(createFunctionClass(*popFunc, NULL));
 					vecAdd(&staticVariableHolder, a);
 					CreateVariableReferenceStatic((Variable_t*)(staticVariableHolder.count - 1));
 					op.variable = reference;
+					vecAdd(&lastFunc->operations, op);
+
+					op.token = EquationSeperator;
+					op.lineNumber = lineNumber;
+					vecAdd(&lastFunc->operations, op);
 				}
 				else {
 					SCRIPT_PARSER_ERR("Stack count is 1 or state is not a function");

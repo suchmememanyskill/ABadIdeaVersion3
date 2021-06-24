@@ -2,6 +2,7 @@
 #include "compat.h"
 #include <malloc.h>
 #include <string.h>
+#include "argTypes.h"
 
 IntClass_t createIntClass(s64 in) {
 	IntClass_t a = { in };
@@ -15,71 +16,60 @@ Variable_t newIntVariable(s64 x) {
 }
 
 ClassFunction(printIntVariable) {
-	if (caller->variableType == IntClass) {
-		IntClass_t* a = &caller->integer;
-		gfx_printf("%lld", a->value);
-	}
+	IntClass_t* a = &caller->integer;
+	gfx_printf("%lld", a->value);
 	return &emptyClass;
 }
 
-ClassFunction(addIntVariables) {
-	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(*args);
+#define IntOpFunction(name, op) ClassFunction(name) { s64 i1 = getIntValue(caller); s64 i2 = getIntValue(*args); return newIntVariablePtr((i1 op i2)); }
 
-	return newIntVariablePtr((i1 + i2));
-}
-
-ClassFunction(minusIntVariables) {
-	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(*args);
-
-	return newIntVariablePtr((i1 - i2));
-}
-
-ClassFunction(multiplyIntVariables) {
-	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(*args);
-
-	return newIntVariablePtr((i1 * i2));
-}
-
-ClassFunction(equalIntVariables) {
-	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(*args);
-
-	return newIntVariablePtr((i1 == i2));
-}
-
-ClassFunction(notEqualIntVariables) {
-	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(*args);
-
-	return newIntVariablePtr((i1 != i2));
-}
-
-ClassFunction(smallerIntVariables) {
-	s64 i1 = getIntValue(caller);
-	s64 i2 = getIntValue(*args);
-
-	return newIntVariablePtr((i1 < i2));
-}
+IntOpFunction(addInt, +)
+IntOpFunction(minusInt, -)
+IntOpFunction(multInt, *)
+IntOpFunction(divInt, /)
+IntOpFunction(modInt, %)
+IntOpFunction(smallerInt, <)
+IntOpFunction(biggerInt, >)
+IntOpFunction(smallerEqInt, <=)
+IntOpFunction(biggerEqInt, >=)
+IntOpFunction(eqInt, ==)
+IntOpFunction(notEqInt, !=)
+IntOpFunction(logicAndInt, &&)
+IntOpFunction(logicOrInt, ||)
+IntOpFunction(andInt, &)
+IntOpFunction(orInt, |)
+IntOpFunction(bitshiftLeftInt, <<)
+IntOpFunction(bitshiftRightInt, >>)
 
 ClassFunction(notInt) {
 	return newIntVariablePtr(!(getIntValue(caller)));
 }
 
-u8 oneVarArg[] = { VARARGCOUNT };
-u8 oneIntArg[] = { IntClass };
+u8 oneVarArgInt[] = { VARARGCOUNT };
+u8 oneIntArgInt[] = { IntClass };
+
+#define IntOpFunctionEntry(opName, functionName) {opName, functionName, 1, oneIntArgInt}
 
 ClassFunctionTableEntry_t intFunctions[] = {
 	{"print", printIntVariable, 0, 0},
-	{"+", addIntVariables, 1, oneIntArg },
-	{"-", minusIntVariables, 1, oneIntArg },
-	{"*", multiplyIntVariables, 1, oneIntArg },
-	{"==", equalIntVariables, 1, oneIntArg },
-	{"!=", notEqualIntVariables, 1, oneIntArg },
-	{"<", smallerIntVariables, 1, oneIntArg},
 	{"not", notInt, 0, 0},
+	IntOpFunctionEntry("+", addInt),
+	IntOpFunctionEntry("-", minusInt),
+	IntOpFunctionEntry("*", multInt),
+	IntOpFunctionEntry("/", divInt),
+	IntOpFunctionEntry("%", modInt),
+	IntOpFunctionEntry("<", smallerInt),
+	IntOpFunctionEntry(">", biggerInt),
+	IntOpFunctionEntry("<=", smallerEqInt),
+	IntOpFunctionEntry(">=", biggerEqInt),
+	IntOpFunctionEntry("==", eqInt),
+	IntOpFunctionEntry("!=", notEqInt),
+	IntOpFunctionEntry("&&", logicAndInt),
+	IntOpFunctionEntry("||", logicOrInt),
+	IntOpFunctionEntry("&", andInt),
+	IntOpFunctionEntry("|", orInt),
+	IntOpFunctionEntry("<<", bitshiftLeftInt),
+	IntOpFunctionEntry(">>", bitshiftRightInt),
 };
 
 Variable_t getIntegerMember(Variable_t* var, char* memberName) {

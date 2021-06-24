@@ -16,9 +16,6 @@
     <Filter Include="Source Files\Classes">
       <UniqueIdentifier>{c245ac36-a649-432b-a663-98ff9d02d3f4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Classes\Int">
-      <UniqueIdentifier>{64738969-63b9-4d0e-85b9-d9a63a7e36b3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Classes\String">
       <UniqueIdentifier>{e4d90dab-a1e0-4a27-82a1-dc2c6b81f0bd}</UniqueIdentifier>
     </Filter>
@@ -33,6 +30,9 @@
     </Filter>
     <Filter Include="Source Files\Classes\Function">
       <UniqueIdentifier>{015ca379-a813-4d13-a929-3b0efe72bb02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Classes\Int">
+      <UniqueIdentifier>{64738969-63b9-4d0e-85b9-d9a63a7e36b3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

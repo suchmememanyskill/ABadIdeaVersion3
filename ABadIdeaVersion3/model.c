@@ -5,7 +5,7 @@
 
 TokenConvertion_t tokenConvertions[] = {
 	{SmallerEqual, "<="},
-	{BiggerEqual, "=>"},
+	{BiggerEqual, ">="},
 	{NotEqual, "!="},
 	{LogicAnd, "&&"},
 	{LogicOr, "||"},
