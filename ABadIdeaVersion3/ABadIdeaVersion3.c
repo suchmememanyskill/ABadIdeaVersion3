@@ -1,3 +1,5 @@
+#ifdef WIN32
+
 #include <stdio.h>
 #include "compat.h"
 #include "parser.h"
@@ -86,3 +88,4 @@ int main()
 
     gfx_printf("done");
 }
+#endif

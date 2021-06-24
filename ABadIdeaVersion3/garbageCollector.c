@@ -24,11 +24,15 @@ void modReference(Variable_t* ref, u8 add) {
 	if (ref == NULL || ref->gcDoNotFree)
 		return;
 
+	ReferenceCounter_t* additionalFree = NULL;
+
 	vecForEach(ReferenceCounter_t*, references, (&storedReferences)) {
-		if (!add && ((ref->variableType == FunctionClass && ref->function.builtIn && references->ref == ref->function.origin) || (ref->variableType == SolvedArrayReferenceClass && references->ref == ref->solvedArray.arrayClassReference)))
+		if (!add && (
+			(ref->variableType == FunctionClass && ref->function.builtIn && references->ref == ref->function.origin) || 
+			(ref->variableType == SolvedArrayReferenceClass && references->ref == ref->solvedArray.arrayClassReference)))
 			if (--references->refCount <= 0) {
-				freeVariable(&references->ref);
-				vecRem(&storedReferences, ((u8*)references - (u8*)storedReferences.data) / storedReferences.elemSz);
+				additionalFree = references;
+				continue;
 			}
 
 		if (references->ref == ref) {
@@ -37,7 +41,12 @@ void modReference(Variable_t* ref, u8 add) {
 			else {
 				if (--references->refCount <= 0) {
 					freeVariable(&references->ref);
-					vecRem(&storedReferences, ((u8*)references - (u8*)storedReferences.data) / storedReferences.elemSz);
+					vecRem(&storedReferences, ((u8*)references->ref - (u8*)storedReferences.data) / storedReferences.elemSz);
+
+					if (additionalFree != NULL) {
+						freeVariable(&additionalFree->ref);
+						vecRem(&storedReferences, ((u8*)additionalFree->ref - (u8*)storedReferences.data) / storedReferences.elemSz);
+					}
 				}
 			}
 

@@ -1,3 +1,4 @@
+#ifdef WIN32
 #include "vector.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,3 +105,4 @@ void vecRem(Vector_t *vec, int idx) {
 	memcpy((u8*)vec->data + (vec->elemSz * idx), (u8*)vec->data + (vec->elemSz * (idx + 1)), (vec->count - idx - 1) * vec->elemSz);
 	vec->count--;
 }
+#endif

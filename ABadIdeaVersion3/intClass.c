@@ -2,7 +2,6 @@
 #include "compat.h"
 #include <malloc.h>
 #include <string.h>
-#include "argTypes.h"
 
 IntClass_t createIntClass(s64 in) {
 	IntClass_t a = { in };

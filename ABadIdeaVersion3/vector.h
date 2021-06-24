@@ -1,3 +1,4 @@
+#ifdef WIN32
 #pragma once
 
 #include "model.h"
@@ -20,3 +21,4 @@ Vector_t vecFromArray(void* array, u32 count, u32 typesz);
 void* getStackEntry(Vector_t* stack);
 void* popStackEntry(Vector_t* stack);
 void vecRem(Vector_t * vec, int idx);
+#endif
