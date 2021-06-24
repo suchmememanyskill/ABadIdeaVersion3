@@ -7,11 +7,32 @@
 #include "eval.h"
 #include "scriptError.h"
 #include "StringClass.h"
+#include <string.h>
 
 u8 anotherOneIntArg[] = { IntClass };
 u8 oneStringoneFunction[] = { StringClass, FunctionClass };
 u8 oneIntOneAny[] = { IntClass, VARARGCOUNT };
 u8 anotherAnotherOneVarArg[] = { VARARGCOUNT };
+
+Variable_t arrayClassGetIdx(Variable_t *caller, s64 idx) {
+	if (caller->variableType == IntArrayClass) {
+		s64* arr = caller->solvedArray.vector.data;
+		return newIntVariable(arr[idx]);
+	}
+	else if (caller->variableType == StringArrayClass) {
+		char** arr = caller->solvedArray.vector.data;
+		Variable_t v = newStringVariable(arr[idx], 1, 0);
+		v.readOnly = 1;
+		v.reference = 1;
+		return v;
+	}
+	else if (caller->variableType == ByteArrayClass) {
+		u8* arr = caller->solvedArray.vector.data;
+		return newIntVariable(arr[idx]);
+	}
+
+	return (Variable_t) { 0 };
+}
 
 ClassFunction(getArrayIdx) {
 	s64 getVal = (*args)->integer.value;
@@ -20,23 +41,10 @@ ClassFunction(getArrayIdx) {
 		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)getVal, (int)caller->solvedArray.vector.count);
 	}
 
-	if (caller->variableType == IntArrayClass) {
-		s64* arr = caller->solvedArray.vector.data;
-		return copyVariableToPtr(newIntVariable(arr[getVal]));
-	}
-	else if (caller->variableType == StringArrayClass) {
-		char** arr = caller->solvedArray.vector.data;
-		Variable_t v = newStringVariable(arr[getVal], 1, 0);
-		v.readOnly = 1;
-		v.reference = 1;
-		return copyVariableToPtr(v);
-	}
-	else if (caller->variableType == ByteArrayClass) {
-		u8* arr = caller->solvedArray.vector.data;
-		return copyVariableToPtr(newIntVariable(arr[getVal]));
-	}
-
-	return NULL;
+	Variable_t a = arrayClassGetIdx(caller, getVal);
+	if (a.variableType == None)
+		return NULL;
+	return copyVariableToPtr(a);
 }
 
 ClassFunction(getArrayLen) {
@@ -57,6 +65,21 @@ ClassFunction(createRefSkip) {
 	return copyVariableToPtr(refSkip);
 }
 
+
+ClassFunction(takeArray) {
+	s64 skipAmount = getIntValue(*args);
+	if (caller->solvedArray.vector.count < skipAmount || skipAmount <= 0) {
+		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)skipAmount, (int)caller->solvedArray.vector.count);
+	}
+
+	Variable_t refSkip = { .variableType = SolvedArrayReferenceClass };
+	refSkip.solvedArray.arrayClassReference = caller;
+	refSkip.solvedArray.len = caller->solvedArray.vector.count - skipAmount;
+	addPendingReference(caller);
+	return copyVariableToPtr(refSkip);
+}
+
+
 ClassFunction(arrayForEach) {
 	Vector_t* v = &caller->solvedArray.vector;
 
@@ -68,21 +91,7 @@ ClassFunction(arrayForEach) {
 	runtimeVariableEdit(&setVar, iter);
 
 	for (int i = 0; i < v->count; i++) {
-		if (caller->variableType == IntArrayClass) {
-			s64* arr = v->data;
-			iter->integer.value = arr[i];
-		}
-		else if (caller->variableType == StringArrayClass) {
-			char** arr = caller->solvedArray.vector.data;
-			Variable_t v = newStringVariable(arr[i], 1, 0);
-			v.readOnly = 1;
-			v.reference = 1;
-			*iter = v;
-		}
-		else if (caller->variableType == ByteArrayClass) {
-			u8* arr = v->data;
-			iter->integer.value = arr[i];
-		}
+		*iter = arrayClassGetIdx(caller, i);
 
 		Variable_t* res = genericCallDirect(args[1], NULL, 0);
 		if (res == NULL)
@@ -90,7 +99,7 @@ ClassFunction(arrayForEach) {
 	}
 
 	return &emptyClass;
-;}
+}
 
 ClassFunction(arrayCopy) {
 	Vector_t* v = &caller->solvedArray.vector;
@@ -169,6 +178,55 @@ ClassFunction(arrayAdd) {
 	return &emptyClass;
 }
 
+ClassFunction(arrayContains) {
+	Vector_t* v = &caller->solvedArray.vector;
+	Variable_t* arg = *args;
+
+	for (int i = 0; i < v->count; i++) {
+		Variable_t iter = arrayClassGetIdx(caller, i);
+	
+		if (caller->variableType == StringArrayClass) {
+			if (!strcmp(arg->string.value, iter.string.value))
+				return newIntVariablePtr(1);
+		}
+		else {
+			if (arg->integer.value == iter.integer.value)
+				return newIntVariablePtr(1);
+		}
+	}
+
+	return newIntVariablePtr(0);
+}
+
+ClassFunction(arrayMinus) {
+	s64 count = getIntValue(*args);
+	Vector_t* v = &caller->solvedArray.vector;
+	if (v->count < count || count <= 0) {
+		SCRIPT_FATAL_ERR("Accessing index %d while array is %d long", (int)count, (int)caller->solvedArray.vector.count);
+	}
+
+	if (caller->variableType == StringArrayClass) {
+		char** arr = v->data;
+		for (int i = v->count - count; i < count; i++) {
+			FREE(arr[i]);
+		}
+	}
+
+	v->count -= count;
+	return &emptyClass;
+}
+
+ClassFunction(bytesToStr) {
+	if (caller->variableType != ByteArrayClass) {
+		SCRIPT_FATAL_ERR("Nedd a bytearray to convert to str");
+	}
+
+	char* buff = malloc(caller->solvedArray.vector.count + 1);
+	memcpy(buff, caller->solvedArray.vector.data, caller->solvedArray.vector.count);
+	buff[caller->solvedArray.vector.count] = '\0';
+	return newStringVariablePtr(buff, 0, 0);
+}
+
 ClassFunctionTableEntry_t arrayFunctions[] = {
 	{"get", getArrayIdx, 1, anotherOneIntArg },
 	{"len", getArrayLen, 0, 0},
@@ -177,6 +235,10 @@ ClassFunctionTableEntry_t arrayFunctions[] = {
 	{"copy", arrayCopy, 0, 0},
 	{"set", arraySet, 2, oneIntOneAny},
 	{"+", arrayAdd, 1, anotherAnotherOneVarArg},
+	{"-", arrayMinus, 1, anotherOneIntArg},
+	{"take", takeArray, 1, anotherOneIntArg},
+	{"contains", arrayContains, 1, anotherAnotherOneVarArg},
+	{"bytestostr", bytesToStr, 0, 0},
 };
 
 Variable_t getArrayMember(Variable_t* var, char* memberName) {
