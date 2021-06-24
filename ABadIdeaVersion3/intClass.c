@@ -16,7 +16,7 @@ Variable_t newIntVariable(s64 x) {
 
 ClassFunction(printIntVariable) {
 	IntClass_t* a = &caller->integer;
-	gfx_printf("%lld", a->value);
+	gfx_printf("%d", (int)a->value);
 	return &emptyClass;
 }
 

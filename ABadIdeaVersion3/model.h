@@ -5,9 +5,10 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 typedef long long s64;
 
-#pragma pack(1)
+
 
 #ifdef WIN32
+#pragma pack(1)
 typedef struct {
 	void* data;
 	u32 capacity;
@@ -16,6 +17,7 @@ typedef struct {
 } Vector_t;
 #else
 #include "../utils/vector.h"
+#pragma pack(1)
 #endif
 
 
@@ -250,3 +252,5 @@ typedef struct _ClassFunctionTableEntry_t {
 } ClassFunctionTableEntry_t;
 
 extern Variable_t emptyClass;
+
+#pragma pack()

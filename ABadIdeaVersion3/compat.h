@@ -3,7 +3,7 @@
 #ifdef WIN32
 	#include <stdio.h>
 	#include <malloc.h>
-	#define gfx_printf(str, ...) printf(str, __VA_ARGS__)
+#define gfx_printf(str, ...) printf(str, ##__VA_ARGS__)
 	#define gfx_vprintf(str, va) vprintf(str, va);
 	#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 	#define LP_VER_MJ 3

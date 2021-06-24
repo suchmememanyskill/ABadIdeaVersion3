@@ -82,10 +82,11 @@ Variable_t standardFunctions[] = {
 	[STD_PRINT] = createStandardFunction(standardFunctionDefenitions[STD_PRINT]),
 };
 
+
 Dict_t standardLibrary[] = {
-	[STD_IF] = {.name = "if", .var = &standardFunctions[STD_IF]},
-	[STD_WHILE] = {.name = "while", .var = &standardFunctions[STD_WHILE]},
-	[STD_PRINT] = {.name = "print", .var = &standardFunctions[STD_PRINT]},
+	{.name = "if", .var = &standardFunctions[STD_IF]},
+	{.name = "while", .var = &standardFunctions[STD_WHILE]},
+	{.name = "print", .var = &standardFunctions[STD_PRINT]},
 };
 
 Variable_t* searchStdLib(char* funcName) {
