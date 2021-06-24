@@ -13,4 +13,9 @@
 	#define CpyStr(x) _strdup(x);
 	#include "vector.h"
 	#pragma _CRT_SECURE_NO_WARNINGS
+#else
+	#include "../gfx/gfx.h"
+	#include <mem/heap.h>
+	#include "../utils/vector.h"
+	#include "../utils/utils.h"
 #endif

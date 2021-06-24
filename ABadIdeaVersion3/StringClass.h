@@ -1,7 +1,6 @@
 #pragma once
 #include "model.h"
 #include "genericClass.h"
-#include "vector.h"
 
 StringClass_t createStringClass(char* in, u8 free);
 char* getStringValue(Variable_t* var);

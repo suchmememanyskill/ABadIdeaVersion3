@@ -3,7 +3,6 @@
 #include "genericClass.h"
 #include "eval.h"
 #include "garbageCollector.h"
-#include "vector.h"
 #include "standardLibrary.h"
 #include "scriptError.h"
 #include "StringClass.h"

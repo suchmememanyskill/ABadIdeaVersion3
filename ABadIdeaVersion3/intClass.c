@@ -26,42 +26,42 @@ ClassFunction(addIntVariables) {
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(*args);
 
-	return newIntVariablePtr((i1 + i2), 0);
+	return newIntVariablePtr((i1 + i2));
 }
 
 ClassFunction(minusIntVariables) {
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(*args);
 
-	return newIntVariablePtr((i1 - i2), 0);
+	return newIntVariablePtr((i1 - i2));
 }
 
 ClassFunction(multiplyIntVariables) {
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(*args);
 
-	return newIntVariablePtr((i1 * i2), 0);
+	return newIntVariablePtr((i1 * i2));
 }
 
 ClassFunction(equalIntVariables) {
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(*args);
 
-	return newIntVariablePtr((i1 == i2), 0);
+	return newIntVariablePtr((i1 == i2));
 }
 
 ClassFunction(notEqualIntVariables) {
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(*args);
 
-	return newIntVariablePtr((i1 != i2), 0);
+	return newIntVariablePtr((i1 != i2));
 }
 
 ClassFunction(smallerIntVariables) {
 	s64 i1 = getIntValue(caller);
 	s64 i2 = getIntValue(*args);
 
-	return newIntVariablePtr((i1 < i2), 0);
+	return newIntVariablePtr((i1 < i2));
 }
 
 ClassFunction(notInt) {

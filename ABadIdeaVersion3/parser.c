@@ -593,8 +593,10 @@ void exitFunction(Operator_t* start, u32 len) {
 				}
 
 				CallArgs_t* nextCall = call->next;
-				if (call != &start[i].callArgs)
+				if (call != &start[i].callArgs) {
 					FREE(call);
+				}
+					
 				call = nextCall;
 			}
 		}

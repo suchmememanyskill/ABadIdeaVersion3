@@ -231,8 +231,9 @@ void freeVariableInternal(Variable_t* referencedTarget) {
 			FREE(referencedTarget->string.value);
 			break;
 		case StringArrayClass:
-			vecForEach(char**, stringsInArray, (&referencedTarget->solvedArray.vector))
+			vecForEach(char**, stringsInArray, (&referencedTarget->solvedArray.vector)) {
 				FREE(*stringsInArray);
+			}
 		case ByteArrayClass:
 		case IntArrayClass:
 			vecFree(referencedTarget->solvedArray.vector);

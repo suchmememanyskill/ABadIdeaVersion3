@@ -44,7 +44,7 @@ ClassFunction(addStringVariables) {
 
 ClassFunction(getStringLength) {
 	char* s1 = getStringValue(caller);
-	return newIntVariablePtr(strlen(s1), 0);
+	return newIntVariablePtr(strlen(s1));
 }
 
 u8 oneStringArg[] = { StringClass };

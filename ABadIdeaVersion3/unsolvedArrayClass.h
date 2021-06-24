@@ -1,7 +1,7 @@
 #pragma once
 #include "model.h"
 #include "genericClass.h"
-#include "vector.h"
+#include "compat.h"
 
 Variable_t createUnsolvedArrayVariable(Function_t* f);
 Variable_t* solveArray(Variable_t* unsolvedArray);

@@ -7,12 +7,17 @@ typedef long long s64;
 
 #pragma pack(1)
 
+#ifdef WIN32
 typedef struct {
 	void* data;
 	u32 capacity;
 	u32 count;
 	u8 elemSz;
 } Vector_t;
+#else
+#include "../utils/vector.h"
+#endif
+
 
 typedef enum {
 	None = 0,

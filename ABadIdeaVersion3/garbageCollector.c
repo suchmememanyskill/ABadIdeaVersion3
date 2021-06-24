@@ -1,5 +1,4 @@
 #include "model.h"
-#include "vector.h"
 #include "genericClass.h"
 #include "compat.h"
 #include "garbageCollector.h"

@@ -1,6 +1,6 @@
 
 #pragma once
-#include "vector.h"
+#include "compat.h"
 
 typedef struct {
 	Function_t main;
