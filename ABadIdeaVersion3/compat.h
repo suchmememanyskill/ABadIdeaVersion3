@@ -6,9 +6,9 @@
 	#define gfx_printf(str, ...) printf(str, __VA_ARGS__)
 	#define gfx_vprintf(str, va) vprintf(str, va);
 	#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
-	#define LPVERSION_MAJOR 3
-	#define LPVERSION_MINOR 0
-	#define LPVERSION_BUGFX 5
+	#define LP_VER_MJ 3
+	#define LP_VER_MN 0
+	#define LP_VER_BF 5
 	#define FREE(x) if (x) free(x)
 	#define CpyStr(x) _strdup(x);
 	#include "vector.h"

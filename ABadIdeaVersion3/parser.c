@@ -87,13 +87,13 @@ u8 nextToken(char** inPtr, void** val) {
 					}
 
 					u8 outdated = 0;
-					if (vers[0] > LPVERSION_MAJOR)
+					if (vers[0] > LP_VER_MJ)
 						outdated = 1;
-					else if (vers[0] == LPVERSION_MAJOR) {
-						if (vers[1] > LPVERSION_MINOR)
+					else if (vers[0] == LP_VER_MJ) {
+						if (vers[1] > LP_VER_MN)
 							outdated = 1;
-						else if (vers[1] == LPVERSION_MINOR) {
-							if (vers[2] > LPVERSION_BUGFX)
+						else if (vers[1] == LP_VER_MN) {
+							if (vers[2] > LP_VER_BF)
 								outdated = 1;
 						}
 					}
