@@ -11,5 +11,6 @@
 	#define LPVERSION_BUGFX 5
 	#define FREE(x) if (x) free(x)
 	#define CpyStr(x) _strdup(x);
+	#include "vector.h"
 	#pragma _CRT_SECURE_NO_WARNINGS
 #endif

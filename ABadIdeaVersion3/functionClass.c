@@ -1,6 +1,5 @@
 #include "functionClass.h"
 #include "compat.h"
-#include "vector.h"
 #include "model.h"
 #include <malloc.h>
 

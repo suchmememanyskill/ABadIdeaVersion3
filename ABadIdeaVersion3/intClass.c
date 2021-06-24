@@ -1,6 +1,5 @@
 #include "intClass.h"
 #include "compat.h"
-#include "vector.h"
 #include <malloc.h>
 #include <string.h>
 

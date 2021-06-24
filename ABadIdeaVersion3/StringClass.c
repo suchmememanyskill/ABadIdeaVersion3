@@ -1,6 +1,5 @@
 #include "StringClass.h"
 #include "compat.h"
-#include "vector.h"
 #include "intClass.h"
 #include <string.h>
 

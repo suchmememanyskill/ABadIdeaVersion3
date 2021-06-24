@@ -1,6 +1,6 @@
 #include "model.h"
 #include "compat.h"
-#include "vector.h"
+#include "compat.h"
 #include "parser.h"
 #include <stdlib.h>
 #include <string.h>
